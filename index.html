@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="補充台帳">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E7EBEC">
+<title>補充台帳</title>
+<style>
+  :root{
+    --paper:#E7EBEC; --card:#FFFFFF; --ink:#141A1E; --sub:#6C777D;
+    --line:#D2D9DB; --signal:#F0B429; --signal-ink:#4A3200; --petrol:#0F4749;
+    --jp:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--jp);
+    padding-bottom:calc(120px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 20px}
+  button,input{font-family:inherit}
+  button{border:none;background:none;padding:0;color:inherit;cursor:pointer}
+
+  .head{display:flex;align-items:flex-end;justify-content:space-between;padding:calc(24px + env(safe-area-inset-top)) 0 12px}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.34em;color:var(--sub)}
+  h1{font-size:25px;font-weight:800;letter-spacing:.04em;margin:4px 0 0}
+  .ghost{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--sub);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  .ghost.on{background:var(--petrol);border-color:var(--petrol);color:var(--card)}
+
+  .tabs{display:flex;gap:6px}
+  .tab{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-size:14px;font-weight:700;color:var(--sub);background:transparent}
+  .tab.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+  .tab .n{font-family:var(--mono);font-size:11px;opacity:.75;margin-left:8px}
+  .hint{color:var(--sub);font-size:11.5px;line-height:1.7;margin:10px 0 0}
+
+  .notice{background:#FDECEA;color:#7A2018;font-size:12px;line-height:1.6;
+    border-radius:10px;padding:10px 12px;margin-top:12px}
+
+  .cat{display:flex;align-items:center;gap:12px;margin:28px 0 10px}
+  .cat b{font-size:12px;font-weight:800;letter-spacing:.16em}
+  .cat i{flex:1;height:1px;background:var(--line)}
+  .cat s{font-family:var(--mono);font-size:10.5px;color:var(--sub);text-decoration:none}
+
+  .rows{display:flex;flex-direction:column;gap:8px}
+  .rowline{display:flex;align-items:stretch;gap:8px}
+  .row{position:relative;flex:1;height:62px;perspective:900px;display:block;text-align:left}
+  .row-inner{position:absolute;inset:0;transform-style:preserve-3d;
+    transition:transform .42s cubic-bezier(.2,.8,.2,1)}
+  .row.need .row-inner{transform:rotateX(180deg)}
+  .face{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+    border-radius:12px;padding:0 15px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .front{background:var(--card);border:1px solid var(--line)}
+  .front.over{border-color:#E8D3A0;border-left:4px solid var(--signal)}
+  .back{background:var(--signal);color:var(--signal-ink);border:1px solid #D89F1D;transform:rotateX(180deg)}
+  .nm{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .back .nm{font-weight:800}
+  .meta{font-family:var(--mono);font-size:10.5px;color:var(--sub);letter-spacing:.06em;margin-top:4px}
+  .back .meta{color:var(--signal-ink);opacity:.8;letter-spacing:.14em}
+  .txt{min-width:0;padding-right:12px}
+  .soon{flex:0 0 auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    color:var(--signal-ink);background:#FBEFCF;border-radius:4px;padding:4px 6px}
+  .tick{flex:0 0 auto;font-size:19px;font-weight:800}
+  .pen{width:48px;flex:0 0 auto;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;color:var(--sub);font-size:15px}
+
+  .empty{border:1px dashed var(--line);border-radius:12px;padding:40px 20px;text-align:center;margin-top:20px}
+  .empty p{margin:0;font-size:14px;font-weight:700}
+  .empty span{display:block;color:var(--sub);font-size:12px;line-height:1.7;margin-top:8px}
+  .empty button{color:var(--petrol);font-size:13px;font-weight:700;text-decoration:underline;margin-top:16px}
+
+  .fab{position:fixed;left:0;right:0;bottom:0;padding:32px 20px calc(24px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--paper) 62%,rgba(231,235,236,0))}
+  .fab button{display:block;width:100%;max-width:440px;margin:0 auto;background:var(--petrol);
+    color:var(--card);border-radius:12px;padding:15px;font-size:14px;font-weight:700}
+
+  .undo{position:fixed;left:0;right:0;bottom:calc(104px + env(safe-area-inset-bottom));padding:0 20px;display:none}
+  .undo.on{display:block}
+  .undo div{max-width:440px;margin:0 auto;background:var(--ink);color:var(--card);border-radius:12px;
+    padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px}
+  .undo button{background:#2B3439;border-radius:8px;padding:5px 10px;font-size:12px;color:var(--card);flex:0 0 auto}
+
+  .scrim{position:fixed;inset:0;background:rgba(20,26,30,.42);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .scrim.on{display:flex}
+  .sheet{width:100%;max-width:480px;background:var(--paper);border-radius:18px 18px 0 0;
+    padding:20px 20px calc(32px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto}
+  .sheet h2{font-size:17px;font-weight:800;letter-spacing:.04em;margin:0}
+  .sheet .top{display:flex;align-items:center;justify-content:space-between}
+  .lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--sub);margin:20px 0 6px}
+  .fld{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:12px;font-size:16px;color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--sub);border-radius:999px;
+    padding:6px 12px;font-size:12.5px;font-weight:700}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+  .quick{display:flex;gap:6px;margin-top:8px}
+  .quick button{background:var(--card);border:1px solid var(--line);color:var(--sub);
+    font-family:var(--mono);font-size:12px;border-radius:6px;padding:6px 10px}
+  .note{color:var(--sub);font-size:11.5px;line-height:1.7;margin:8px 0 0}
+  .primary{width:100%;background:var(--petrol);color:var(--card);border-radius:12px;
+    padding:15px;font-size:14px;font-weight:700;margin-top:24px}
+  .primary:disabled{background:#B7C0C2}
+  .danger{display:flex;align-items:center;justify-content:center;gap:6px;color:#B3261E;font-size:13px;
+    width:100%;padding:10px;margin-top:10px}
+  .confirm{display:flex;gap:8px;margin-top:10px}
+  .confirm .del{flex:1;background:#B3261E;color:var(--card);border-radius:12px;padding:13px;font-size:13px;font-weight:700}
+  .confirm .no{flex:1;border:1px solid var(--line);color:var(--sub);border-radius:12px;padding:13px;font-size:13px}
+
+  details{margin-top:36px;border-top:1px solid var(--line);padding-top:14px}
+  summary{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--sub);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  details textarea{width:100%;height:110px;margin-top:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--ink)}
+  details .acts{display:flex;gap:8px;margin-top:8px}
+  details .acts button{flex:1;border:1px solid var(--line);background:var(--card);color:var(--sub);
+    border-radius:10px;padding:10px;font-size:12.5px;font-weight:700}
+
+  @media (prefers-reduced-motion: reduce){.row-inner{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow">REFILL LEDGER</div>
+      <h1>補充台帳</h1>
+    </div>
+    <button class="ghost" id="editBtn">編集</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-view="stock">在庫を見る<span class="n" id="nStock">0</span></button>
+    <button class="tab" data-view="buy">買う<span class="n" id="nBuy">0</span></button>
+  </div>
+  <p class="hint" id="hint"></p>
+  <div id="notice"></div>
+
+  <div id="list"></div>
+
+  <details>
+    <summary>BACKUP / データの書き出し・読み込み</summary>
+    <textarea id="backup" placeholder="ここにデータが表示されます"></textarea>
+    <div class="acts">
+      <button id="expBtn">書き出す</button>
+      <button id="impBtn">読み込む</button>
+    </div>
+    <p class="note">機種変更や保存が効かないときの控えです。書き出したテキストをメモに貼っておけば、読み込みで元に戻せます。</p>
+  </details>
+</div>
+
+<div class="undo" id="undoBar">
+  <div><span id="undoTxt"></span><button id="undoBtn">元に戻す</button></div>
+</div>
+
+<div class="fab"><button id="addBtn">＋ アイテムを追加</button></div>
+
+<div class="scrim" id="scrim">
+  <div class="sheet">
+    <div class="top">
+      <h2 id="sheetTitle">アイテムを追加</h2>
+      <button id="closeBtn" style="color:var(--sub);font-size:20px;padding:4px">✕</button>
+    </div>
+
+    <label class="lbl">NAME / 名前</label>
+    <input class="fld" id="fName" placeholder="ごま油">
+
+    <label class="lbl">CATEGORY / カテゴリ</label>
+    <div class="chips" id="chips"></div>
+    <input class="fld" id="fNewCat" placeholder="新しいカテゴリを作る" style="margin-top:8px;font-size:14px">
+
+    <label class="lbl">CYCLE / 消費の目安（任意）</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input class="fld" id="fCycle" inputmode="numeric" placeholder="60" style="width:96px;font-family:var(--mono)">
+      <span style="color:var(--sub);font-size:13px">日でなくなるくらい</span>
+    </div>
+    <div class="quick">
+      <button data-q="14">14</button><button data-q="30">30</button><button data-q="60">60</button>
+      <button data-q="90">90</button><button data-q="180">180</button>
+    </div>
+    <p class="note">通知は出ません。経過日数がこれを超えたものに「そろそろ」の印が付くだけです。</p>
+
+    <div id="lastWrap" style="display:none">
+      <label class="lbl">LAST / 前回買った日</label>
+      <input class="fld" id="fLast" type="date" style="font-family:var(--mono);font-size:15px">
+    </div>
+
+    <button class="primary" id="saveBtn">台帳に追加</button>
+    <div id="delWrap"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY='hojuu-daichou-v1';
+  var DEF=['調味料','化粧品','洗剤・日用品'];
+  var S={items:[],cats:DEF.slice()};
+  var view='stock', editMode=false, storageOK=true, undoData=null, draft=null;
+
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+  function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function daysSince(iso){
+    if(!iso) return null;
+    var p=iso.split('-'); var t=new Date(+p[0],+p[1]-1,+p[2]); var n=new Date();
+    return Math.floor((new Date(n.getFullYear(),n.getMonth(),n.getDate())-t)/86400000);
+  }
+
+  function load(){
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){var v=JSON.parse(raw); S.items=v.items||[]; S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice();}
+      localStorage.setItem(KEY+'-probe','1'); localStorage.removeItem(KEY+'-probe');
+    }catch(e){ storageOK=false; }
+  }
+  function save(){
+    if(!storageOK) return;
+    try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){ storageOK=false; render(); }
+  }
+
+  function noticeHtml(){
+    if(storageOK) return '';
+    return '<div class="notice">この開き方では自動保存ができません。Safariで開き直すか、下のバックアップからテキストを控えてください。</div>';
+  }
+
+  function rowHtml(it){
+    var d=daysSince(it.last);
+    var over=it.cycle && d!==null && d>=it.cycle;
+    var meta=(d===null?'購入記録なし':'前回から '+d+'日')+(it.cycle?' / 目安 '+it.cycle+'日':'');
+    var back=view==='buy'?'タップで買った記録':'買うリストに入りました';
+    return '<div class="rowline">'+
+      '<button class="row'+(it.need?' need':'')+'" data-tap="'+it.id+'">'+
+        '<div class="row-inner">'+
+          '<div class="face front'+(over?' over':'')+'">'+
+            '<div class="txt"><div class="nm">'+esc(it.name)+'</div><div class="meta">'+esc(meta)+'</div></div>'+
+            (over?'<span class="soon">そろそろ</span>':'')+
+          '</div>'+
+          '<div class="face back">'+
+            '<div class="txt"><div class="nm">'+esc(it.name)+'</div><div class="meta">'+back+'</div></div>'+
+            '<span class="tick">✓</span>'+
+          '</div>'+
+        '</div>'+
+      '</button>'+
+      (editMode?'<button class="pen" data-edit="'+it.id+'">✎</button>':'')+
+    '</div>';
+  }
+
+  function render(){
+    document.getElementById('nStock').textContent=S.items.length;
+    document.getElementById('nBuy').textContent=S.items.filter(function(i){return i.need;}).length;
+    document.getElementById('hint').textContent = view==='stock'
+      ? '残りが少なくなったものをタップすると、タグが裏返って「買う」に入ります。'
+      : '買えたものをタップすると在庫ありに戻り、今日の日付が記録されます。';
+    document.getElementById('notice').innerHTML=noticeHtml();
+    document.getElementById('editBtn').textContent=editMode?'編集を終える':'編集';
+    document.getElementById('editBtn').className='ghost'+(editMode?' on':'');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
+      t.className='tab'+(t.dataset.view===view?' on':'');});
+
+    var src = view==='buy' ? S.items.filter(function(i){return i.need;}) : S.items;
+    var order = S.cats.concat(['その他']);
+    var html='';
+    order.forEach(function(c){
+      var list=src.filter(function(i){return (i.cat||'その他')===c;});
+      if(!list.length) return;
+      html+='<div class="cat"><b>'+esc(c)+'</b><i></i><s>'+list.length+'</s></div>'+
+            '<div class="rows">'+list.map(rowHtml).join('')+'</div>';
+    });
+    if(!html){
+      html = view==='buy'
+        ? '<div class="empty"><p>買うものはありません</p><span>在庫を見るタブで、残り少ないものをタップしてください。</span></div>'
+        : '<div class="empty"><p>台帳はまだ空です</p><span>よく買う調味料や洗剤を1つ登録してみてください。</span><button data-add="1">最初のアイテムを追加</button></div>';
+    }
+    document.getElementById('list').innerHTML=html;
+    document.getElementById('undoBar').className='undo'+(undoData&&view==='buy'?' on':'');
+    if(undoData) document.getElementById('undoTxt').textContent=undoData.name+' を買ったことにしました';
+  }
+
+  /* ---- 操作 ---- */
+  document.getElementById('list').addEventListener('click',function(e){
+    var tap=e.target.closest('[data-tap]'), ed=e.target.closest('[data-edit]'), ad=e.target.closest('[data-add]');
+    if(ad){ openSheet(null); return; }
+    if(ed){ openSheet(S.items.filter(function(i){return i.id===ed.dataset.edit;})[0]); return; }
+    if(!tap) return;
+    var it=S.items.filter(function(i){return i.id===tap.dataset.tap;})[0];
+    if(!it) return;
+    if(view==='buy'){
+      undoData={id:it.id,prev:{need:it.need,last:it.last},name:it.name};
+      it.need=false; it.last=today();
+    }else{
+      it.need=!it.need;
+    }
+    save(); render();
+  });
+
+  document.getElementById('undoBtn').addEventListener('click',function(){
+    if(!undoData) return;
+    var it=S.items.filter(function(i){return i.id===undoData.id;})[0];
+    if(it){ it.need=undoData.prev.need; it.last=undoData.prev.last; }
+    undoData=null; save(); render();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
+    t.addEventListener('click',function(){ view=t.dataset.view; editMode=false; undoData=null; render(); });
+  });
+  document.getElementById('editBtn').addEventListener('click',function(){ editMode=!editMode; render(); });
+  document.getElementById('addBtn').addEventListener('click',function(){ openSheet(null); });
+
+  /* ---- シート ---- */
+  function openSheet(item){
+    draft = item ? {id:item.id,cat:item.cat} : {id:null,cat:S.cats[0]||'その他'};
+    document.getElementById('sheetTitle').textContent = item?'アイテムを編集':'アイテムを追加';
+    document.getElementById('fName').value = item?item.name:'';
+    document.getElementById('fNewCat').value='';
+    document.getElementById('fCycle').value = item&&item.cycle?item.cycle:'';
+    document.getElementById('lastWrap').style.display = item?'block':'none';
+    document.getElementById('fLast').value = item&&item.last?item.last:'';
+    document.getElementById('saveBtn').textContent = item?'変更を保存':'台帳に追加';
+    document.getElementById('delWrap').innerHTML = item
+      ? '<button class="danger" id="delBtn">🗑 このアイテムを削除</button>' : '';
+    if(item){
+      document.getElementById('delBtn').addEventListener('click',function(){
+        document.getElementById('delWrap').innerHTML =
+          '<div class="confirm"><button class="del" id="delYes">削除する</button><button class="no" id="delNo">やめる</button></div>';
+        document.getElementById('delYes').addEventListener('click',function(){
+          S.items=S.items.filter(function(i){return i.id!==item.id;}); save(); closeSheet(); render();
+        });
+        document.getElementById('delNo').addEventListener('click',function(){ openSheet(item); });
+      });
+    }
+    renderChips();
+    document.getElementById('scrim').className='scrim on';
+  }
+  function closeSheet(){ document.getElementById('scrim').className='scrim'; draft=null; }
+  document.getElementById('closeBtn').addEventListener('click',closeSheet);
+  document.getElementById('scrim').addEventListener('click',function(e){ if(e.target.id==='scrim') closeSheet(); });
+
+  function renderChips(){
+    document.getElementById('chips').innerHTML = S.cats.map(function(c){
+      var on = !document.getElementById('fNewCat').value.trim() && c===draft.cat;
+      return '<button class="chip'+(on?' on':'')+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>';
+    }).join('');
+  }
+  document.getElementById('chips').addEventListener('click',function(e){
+    var b=e.target.closest('[data-cat]'); if(!b) return;
+    draft.cat=b.dataset.cat; document.getElementById('fNewCat').value=''; renderChips();
+  });
+  document.getElementById('fNewCat').addEventListener('input',renderChips);
+  Array.prototype.forEach.call(document.querySelectorAll('.quick button'),function(b){
+    b.addEventListener('click',function(){ document.getElementById('fCycle').value=b.dataset.q; });
+  });
+  document.getElementById('fCycle').addEventListener('input',function(e){
+    e.target.value=e.target.value.replace(/[^0-9]/g,'');
+  });
+
+  document.getElementById('saveBtn').addEventListener('click',function(){
+    var name=document.getElementById('fName').value.trim();
+    if(!name) return;
+    var newCat=document.getElementById('fNewCat').value.trim();
+    var cat=newCat||draft.cat||'その他';
+    if(S.cats.indexOf(cat)<0) S.cats.push(cat);
+    var cyc=document.getElementById('fCycle').value;
+    var cycle=cyc?Math.max(1,parseInt(cyc,10)):null;
+    if(draft.id){
+      var it=S.items.filter(function(i){return i.id===draft.id;})[0];
+      it.name=name; it.cat=cat; it.cycle=cycle;
+      it.last=document.getElementById('fLast').value||null;
+    }else{
+      S.items.push({id:uid(),name:name,cat:cat,cycle:cycle,last:null,need:false});
+    }
+    save(); closeSheet(); render();
+  });
+
+  /* ---- バックアップ ---- */
+  document.getElementById('expBtn').addEventListener('click',function(){
+    document.getElementById('backup').value=JSON.stringify(S);
+    document.getElementById('backup').select();
+  });
+  document.getElementById('impBtn').addEventListener('click',function(){
+    var t=document.getElementById('backup').value.trim();
+    if(!t) return;
+    try{
+      var v=JSON.parse(t);
+      S.items=v.items||[]; S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice();
+      save(); render();
+      document.getElementById('backup').value='読み込みました';
+    }catch(e){
+      document.getElementById('backup').value='読み込めませんでした。書き出したテキスト全体を貼り付けてください。';
+    }
+  });
+
+  load(); render();
+})();
+</script>
+</body>
+</html>
