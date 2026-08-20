@@ -40,6 +40,15 @@
   .tab .n{font-family:var(--mono);font-size:11px;opacity:.75;margin-left:8px}
   .hint{color:var(--sub);font-size:11.5px;line-height:1.7;margin:10px 0 0}
 
+  .sortbar{display:flex;align-items:center;gap:6px;margin-top:12px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .sortbar::-webkit-scrollbar{display:none}
+  .sortbar em{flex:0 0 auto;font-family:var(--mono);font-style:normal;font-size:10px;
+    letter-spacing:.2em;color:var(--sub)}
+  .sortbar button{flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--sub);
+    border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .sortbar button.on{background:var(--petrol);border-color:var(--petrol);color:var(--card)}
+
   .notice{background:#FDECEA;color:#7A2018;font-size:12px;line-height:1.6;
     border-radius:10px;padding:10px 12px;margin-top:12px}
 
@@ -139,6 +148,7 @@
     <button class="tab" data-view="buy">買う<span class="n" id="nBuy">0</span></button>
   </div>
   <p class="hint" id="hint"></p>
+  <div class="sortbar" id="sortbar"></div>
   <div id="notice"></div>
 
   <div id="list"></div>
@@ -199,7 +209,9 @@
 (function(){
   var KEY='hojuu-daichou-v1';
   var DEF=['調味料','化粧品','洗剤・日用品'];
-  var S={items:[],cats:DEF.slice()};
+  var SORTS=[{k:'cat',label:'カテゴリ'},{k:'soon',label:'そろそろ'},
+             {k:'days',label:'経過日数'},{k:'name',label:'名前'}];
+  var S={items:[],cats:DEF.slice(),sort:'cat'};
   var view='stock', editMode=false, storageOK=true, undoData=null, draft=null;
 
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){
@@ -215,7 +227,8 @@
   function load(){
     try{
       var raw=localStorage.getItem(KEY);
-      if(raw){var v=JSON.parse(raw); S.items=v.items||[]; S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice();}
+      if(raw){var v=JSON.parse(raw); S.items=v.items||[];
+              S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice(); S.sort=normSort(v.sort);}
       localStorage.setItem(KEY+'-probe','1'); localStorage.removeItem(KEY+'-probe');
     }catch(e){ storageOK=false; }
   }
@@ -229,10 +242,47 @@
     return '<div class="notice">この開き方では自動保存ができません。Safariで開き直すか、下のバックアップからテキストを控えてください。</div>';
   }
 
+  /* ---- 並び替え ---- */
+  function normSort(k){
+    for(var i=0;i<SORTS.length;i++) if(SORTS[i].k===k) return k;
+    return 'cat';
+  }
+  function sortLabel(k){
+    for(var i=0;i<SORTS.length;i++) if(SORTS[i].k===k) return SORTS[i].label;
+    return SORTS[0].label;
+  }
+  function byName(a,b){ return String(a.name).localeCompare(String(b.name),'ja'); }
+  function urgency(it){
+    var d=daysSince(it.last);
+    if(!it.cycle||d===null) return -1;       /* 目安か購入記録がないものは末尾へ */
+    return d/it.cycle;
+  }
+  function comparator(k){
+    if(k==='name') return byName;
+    if(k==='days') return function(a,b){
+      var x=daysSince(a.last), y=daysSince(b.last);
+      if(x===null&&y===null) return byName(a,b);
+      if(x===null) return 1;
+      if(y===null) return -1;
+      return y-x||byName(a,b);
+    };
+    return function(a,b){                    /* soon: 目安に対する経過の比が大きい順 */
+      var x=urgency(a), y=urgency(b);
+      if(x<0&&y<0) return byName(a,b);
+      return (y>x?1:y<x?-1:0)||byName(a,b);
+    };
+  }
+  function renderSortbar(){
+    document.getElementById('sortbar').innerHTML='<em>SORT</em>'+SORTS.map(function(s){
+      return '<button data-sort="'+s.k+'"'+(S.sort===s.k?' class="on"':'')+'>'+esc(s.label)+'</button>';
+    }).join('');
+  }
+
   function rowHtml(it){
     var d=daysSince(it.last);
     var over=it.cycle && d!==null && d>=it.cycle;
     var meta=(d===null?'購入記録なし':'前回から '+d+'日')+(it.cycle?' / 目安 '+it.cycle+'日':'');
+    if(S.sort!=='cat') meta=(it.cat||'その他')+' / '+meta;
     var back=view==='buy'?'タップで買った記録':'買うリストに入りました';
     return '<div class="rowline">'+
       '<button class="row'+(it.need?' need':'')+'" data-tap="'+it.id+'">'+
@@ -263,15 +313,23 @@
     Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
       t.className='tab'+(t.dataset.view===view?' on':'');});
 
+    renderSortbar();
+
     var src = view==='buy' ? S.items.filter(function(i){return i.need;}) : S.items;
-    var order = S.cats.concat(['その他']);
     var html='';
-    order.forEach(function(c){
-      var list=src.filter(function(i){return (i.cat||'その他')===c;});
-      if(!list.length) return;
-      html+='<div class="cat"><b>'+esc(c)+'</b><i></i><s>'+list.length+'</s></div>'+
-            '<div class="rows">'+list.map(rowHtml).join('')+'</div>';
-    });
+    if(S.sort==='cat'){
+      var order = S.cats.concat(['その他']);
+      order.forEach(function(c){
+        var list=src.filter(function(i){return (i.cat||'その他')===c;});
+        if(!list.length) return;
+        html+='<div class="cat"><b>'+esc(c)+'</b><i></i><s>'+list.length+'</s></div>'+
+              '<div class="rows">'+list.map(rowHtml).join('')+'</div>';
+      });
+    }else if(src.length){
+      var sorted=src.slice().sort(comparator(S.sort));
+      html+='<div class="cat"><b>'+esc(sortLabel(S.sort))+'順</b><i></i><s>'+sorted.length+'</s></div>'+
+            '<div class="rows">'+sorted.map(rowHtml).join('')+'</div>';
+    }
     if(!html){
       html = view==='buy'
         ? '<div class="empty"><p>買うものはありません</p><span>在庫を見るタブで、残り少ないものをタップしてください。</span></div>'
@@ -308,6 +366,10 @@
 
   Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
     t.addEventListener('click',function(){ view=t.dataset.view; editMode=false; undoData=null; render(); });
+  });
+  document.getElementById('sortbar').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sort]'); if(!b) return;
+    S.sort=normSort(b.dataset.sort); save(); render();
   });
   document.getElementById('editBtn').addEventListener('click',function(){ editMode=!editMode; render(); });
   document.getElementById('addBtn').addEventListener('click',function(){ openSheet(null); });
@@ -387,7 +449,7 @@
     if(!t) return;
     try{
       var v=JSON.parse(t);
-      S.items=v.items||[]; S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice();
+      S.items=v.items||[]; S.cats=(v.cats&&v.cats.length)?v.cats:DEF.slice(); S.sort=normSort(v.sort);
       save(); render();
       document.getElementById('backup').value='読み込みました';
     }catch(e){
