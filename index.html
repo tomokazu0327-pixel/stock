@@ -121,6 +121,18 @@
   details .acts button{flex:1;border:1px solid var(--line);background:var(--card);color:var(--sub);
     border-radius:10px;padding:10px;font-size:12.5px;font-weight:700}
 
+  .catmgr{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:20px}
+  .catmgr h3{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--sub);margin:0 0 10px;font-weight:400}
+  .catrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+  .catrow:first-of-type{border-top:none}
+  .catrow b{flex:1;font-size:14px;font-weight:700;min-width:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .catrow s{font-family:var(--mono);font-size:10.5px;color:var(--sub);text-decoration:none;flex:0 0 auto}
+  .arrow{width:38px;height:34px;flex:0 0 auto;border:1px solid var(--line);border-radius:8px;
+    color:var(--ink);font-size:14px;background:var(--paper)}
+  .arrow:disabled{color:#C3CBCD;background:var(--card)}
+  .catmgr p{color:var(--sub);font-size:11.5px;line-height:1.7;margin:10px 0 0}
+
   @media (prefers-reduced-motion: reduce){.row-inner{transition:none}}
 </style>
 </head>
@@ -266,6 +278,20 @@
     var src = view==='buy' ? S.items.filter(function(i){return i.need;}) : S.items;
     var order = S.cats.concat(['その他']);
     var html='';
+
+    if(editMode && view==='stock' && S.cats.length){
+      html+='<div class="catmgr"><h3>CATEGORY ORDER / カテゴリの並び</h3>';
+      S.cats.forEach(function(c,idx){
+        var n=S.items.filter(function(i){return (i.cat||'その他')===c;}).length;
+        html+='<div class="catrow">'+
+          '<b>'+esc(c)+'</b><s>'+n+'</s>'+
+          '<button class="arrow" data-mv="'+idx+'" data-dir="-1"'+(idx===0?' disabled':'')+' aria-label="'+esc(c)+'を上へ">↑</button>'+
+          '<button class="arrow" data-mv="'+idx+'" data-dir="1"'+(idx===S.cats.length-1?' disabled':'')+' aria-label="'+esc(c)+'を下へ">↓</button>'+
+        '</div>';
+      });
+      html+='<p>ここでの並びが、下の一覧にそのまま反映されます。よく買うものを上にしておくと確認が早くなります。</p></div>';
+    }
+
     order.forEach(function(c){
       var list=src.filter(function(i){return (i.cat||'その他')===c;});
       if(!list.length) return;
@@ -285,6 +311,15 @@
   /* ---- 操作 ---- */
   document.getElementById('list').addEventListener('click',function(e){
     var tap=e.target.closest('[data-tap]'), ed=e.target.closest('[data-edit]'), ad=e.target.closest('[data-add]');
+    var mv=e.target.closest('[data-mv]');
+    if(mv){
+      var i=+mv.dataset.mv, j=i+(+mv.dataset.dir);
+      if(j>=0 && j<S.cats.length){
+        var t=S.cats[i]; S.cats[i]=S.cats[j]; S.cats[j]=t;
+        save(); render();
+      }
+      return;
+    }
     if(ad){ openSheet(null); return; }
     if(ed){ openSheet(S.items.filter(function(i){return i.id===ed.dataset.edit;})[0]); return; }
     if(!tap) return;
