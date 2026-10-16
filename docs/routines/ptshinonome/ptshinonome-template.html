@@ -1,0 +1,368 @@
+<title>パークタワー東雲 売出し週報</title>
+<!--
+  設計メモ（週次タスクはこのファイルを変更しない。データは __PAGE_DATA__ に差し込む）
+  - 構成は「概要 → データ」。概要＝今週の変化・指標・要判断事項・自宅評価、データ＝散布図・推移・全住戸表。
+  - 自宅の取得価額・ローン残高・売却後現金残高は載せない（利用者の指定）。推定市場価値と換算表のみ。
+  - 方角は3群に畳む（南系＝南・南東・南西／東・西／北系＝北・北西・北東）。散布図の色は3色まで。形でも区別する。
+  - 散布図の破線は「今週の坪単価中央値で買った場合の価格」。線より上は中央値より割高。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* layout: 1カラムの読み物。上に概要（判断材料）、下にデータ（根拠）。スマホ幅基準、広い画面では概要を2列 */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#13181c; --ink-2:#4b5660; --muted:#75808a; --line:#dde2e6;
+  --accent:#1c5a72; --accent-soft:#e2eef3;
+  --warn:#9a5a0a; --warn-soft:#fbefdc; --info:#1c5a72; --info-soft:#e2eef3; --off:#5f6a73; --off-soft:#eceff1;
+  --s-south:#2a78d6; --s-north:#eb6834; --s-ew:#1baf7a;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111518; --surface:#192024; --ink:#edf1f3; --ink-2:#b3bcc4; --muted:#8b959e; --line:#2b3339;
+  --accent:#74b6d0; --accent-soft:#1d3a46;
+  --warn:#e3a453; --warn-soft:#3b2c16; --info:#74b6d0; --info-soft:#1d3a46; --off:#a3adb5; --off-soft:#262d32;
+  --s-south:#3987e5; --s-north:#d95926; --s-ew:#199e70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111518; --surface:#192024; --ink:#edf1f3; --ink-2:#b3bcc4; --muted:#8b959e; --line:#2b3339;
+  --accent:#74b6d0; --accent-soft:#1d3a46;
+  --warn:#e3a453; --warn-soft:#3b2c16; --info:#74b6d0; --info-soft:#1d3a46; --off:#a3adb5; --off-soft:#262d32;
+  --s-south:#3987e5; --s-north:#d95926; --s-ew:#199e70; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:28px}
+.num{font-variant-numeric:tabular-nums}
+header{display:grid;gap:4px;padding-block:8px 4px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted)}
+h1{font-family:var(--f-display);font-size:clamp(26px,6vw,36px);line-height:1.25;margin:0;text-wrap:balance}
+.meta{font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 14px;padding-bottom:12px}
+.part{display:grid;gap:16px}
+.part-h{display:flex;align-items:baseline;gap:10px;margin:0;font-size:13px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+.part-h::after{content:"";flex:1;height:1px;background:var(--line)}
+h2{font-size:17px;margin:0 0 10px;line-height:1.4}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.sub{font-size:12.5px;color:var(--muted);margin:0}
+.changes{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.changes li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.changes li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:.7em}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:720px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.kpi .k{font-size:12px;color:var(--ink-2)}
+.kpi .v{font-size:26px;font-weight:700;line-height:1.2}
+.kpi .v small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:2px}
+.kpi .d{font-size:12px;color:var(--muted)}
+.kpi .d b{font-weight:700;color:var(--ink-2)}
+.two{display:grid;gap:16px}
+@media (min-width:860px){.two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;line-height:1;padding:5px 7px;border-radius:4px;white-space:nowrap;letter-spacing:.02em}
+.t-改定{background:var(--warn-soft);color:var(--warn)}
+.t-新規{background:var(--info-soft);color:var(--info)}
+.t-掲載終了{background:var(--off-soft);color:var(--off)}
+.t-継続{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 6px}
+.t-北・北西,.t-未確認,.t-その他{background:var(--off-soft);color:var(--ink-2)}
+.decisions{margin:0;padding:0;list-style:none;display:grid}
+.decisions li{display:grid;grid-template-columns:5.6em 1fr;gap:10px;padding-block:10px;border-top:1px solid var(--line);align-items:start}
+.decisions li:first-child{border-top:0;padding-top:2px}
+.decisions .chip{justify-self:start;margin-top:3px}
+.home-v{font-size:clamp(22px,5.4vw,28px);font-weight:700;line-height:1.3;margin:4px 0 6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.tbl-wrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--ink-2);font-weight:500}
+td.r,th.r{text-align:right}
+tbody tr:last-child td{border-bottom:0}
+.sortbtn{all:unset;cursor:pointer;display:inline-flex;gap:3px;align-items:center}
+.sortbtn:focus-visible,.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.sortbtn .ar{color:var(--muted);font-size:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2);margin:4px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.axis text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.grid line{stroke:var(--line);stroke-width:1}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.5;box-shadow:0 4px 14px rgb(0 0 0 / .12);min-width:150px;z-index:2}
+.tip b{font-size:14px}
+.minis{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:640px){.minis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 12px 6px;min-width:0}
+.mini h3{font-size:13px;margin:0;font-weight:500;color:var(--ink-2)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;font-size:12.5px;padding:6px 12px;color:var(--ink-2);border-left:1px solid var(--line)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:700}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.mark{display:inline-block;width:10px;height:10px}
+.fn{margin:10px 0 0;padding:0 0 0 1.4em;font-size:12.5px;color:var(--ink-2);display:grid;gap:4px}
+.fn li::marker{color:var(--muted)}
+.fn.plain{list-style:none;padding-left:0}
+.issues{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13.5px}
+.issues li{padding-left:14px;position:relative}
+.issues li::before{content:"";position:absolute;left:0;top:.75em;width:6px;height:1px;background:var(--muted)}
+.empty{color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <header>
+    <div class="eyebrow">江東区東雲1丁目 ／ 中古売出し 週報</div>
+    <h1>パークタワー東雲</h1>
+    <div class="meta num" id="meta"></div>
+  </header>
+
+  <section class="part" aria-labelledby="p1">
+    <h2 class="part-h" id="p1">概要</h2>
+    <div class="panel">
+      <h2>今週の変化</h2>
+      <ul class="changes" id="summary"></ul>
+    </div>
+    <div class="kpis num" id="kpis"></div>
+    <div class="two">
+      <div class="panel">
+        <h2>要判断事項</h2>
+        <ul class="decisions" id="decisions"></ul>
+      </div>
+      <div class="panel">
+        <h2>自宅評価</h2>
+        <p class="sub" id="home-spec"></p>
+        <div class="home-v num" id="home-v"></div>
+        <span class="pill" id="home-status"></span>
+        <div class="tbl-wrap">
+          <table class="num">
+            <caption class="sub" style="text-align:left;padding-bottom:6px">北・北西向き住戸の坪単価を19.42坪に換算した参考値</caption>
+            <thead><tr><th>住戸</th><th class="r">階数</th><th class="r">坪単価</th><th class="r">換算額</th><th class="r">前回比</th></tr></thead>
+            <tbody id="north"></tbody>
+          </table>
+        </div>
+        <ol class="fn" id="north-fn"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="part" aria-labelledby="p2">
+    <h2 class="part-h" id="p2">データ</h2>
+    <div class="panel">
+      <h2>価格と広さ</h2>
+      <p class="sub">点は今週SUUMOに掲載中の住戸。破線は今週の坪単価中央値で換算した価格。縦の帯は自宅の推定市場価値。</p>
+      <div class="legend" id="sc-legend"></div>
+      <div class="chart" id="scatter"></div>
+    </div>
+    <div>
+      <h2>定点観測の推移</h2>
+      <div class="minis" id="minis"></div>
+    </div>
+    <div class="panel">
+      <div class="tools">
+        <h2 style="margin:0">全住戸一覧</h2>
+        <div class="seg" role="group" aria-label="方角で絞り込み" id="seg"></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="num" id="units"><thead><tr id="units-h"></tr></thead><tbody></tbody></table>
+      </div>
+      <ul class="fn plain" id="units-fn"></ul>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <h2>掲載終了・SUUMO外で追跡中</h2>
+        <div class="tbl-wrap">
+          <table class="num"><thead><tr><th>区分</th><th class="r">価格</th><th>方角</th><th class="r">階数</th><th class="r">広さ</th><th>間取り</th></tr></thead><tbody id="aside"></tbody></table>
+        </div>
+        <ul class="fn plain" id="aside-fn"></ul>
+      </div>
+      <div class="panel">
+        <h2>未解決の論点</h2>
+        <ul class="issues" id="issues"></ul>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>脚注</h2>
+      <ol class="fn" id="notes" style="margin-top:0"></ol>
+    </div>
+  </section>
+</div>
+
+<script type="application/json" id="page-data">__PAGE_DATA__</script>
+<script>
+(function(){
+const D = JSON.parse(document.getElementById('page-data').textContent);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const yen = v => { if (v == null) return '—'; const a = Math.abs(v), o = Math.floor(a/10000), m = a % 10000;
+  const s = o ? (o + '億' + (m ? m.toLocaleString('ja-JP') + '万' : '')) : a.toLocaleString('ja-JP') + '万'; return (v<0?'−':'') + s; };
+const md = s => { if(!s) return ''; const [y,m,d] = s.split('-').map(Number); return m + '/' + d; };
+const longDate = s => { const [y,m,d] = s.split('-').map(Number); return y + '年' + m + '月' + d + '日'; };
+const fl = f => f == null ? '未取得' : f + '階';
+const GROUP = {'南':'south','南東':'south','南西':'south','東':'ew','西':'ew','北':'north','北西':'north','北東':'north'};
+const GNAME = {south:'南・南東', ew:'東・西', north:'北・北西'};
+const GSHAPE = {south:'circle', north:'diamond', ew:'square'};
+const sign = (v, unit, digits) => { if (v == null) return ''; const r = digits!=null ? Number(v).toFixed(digits) : v; return (v>0?'+':v<0?'−':'±') + String(r).replace('-','') + unit; };
+
+/* header */
+const M = D.metrics, P = D.prev_metrics || {};
+$('meta').innerHTML = `<span>${longDate(D.date)}更新</span>${D.prev_date ? `<span>前回 ${md(D.prev_date)}</span>` : ''}<span>SUUMO ${M.suumo_count}件 → 名寄せ後 ${M.units_count}戸</span>`;
+
+/* summary */
+$('summary').innerHTML = (D.summary.length ? D.summary : ['今週の変化はありません。']).map(s => `<li><span>${esc(s)}</span></li>`).join('');
+
+/* KPI */
+const kpis = [
+  {k:'坪単価中央値', v:M.tsubo_median_man.toFixed(1), u:'万円/坪', p:P.tsubo_median_man, d:P.tsubo_median_man!=null ? sign(+(M.tsubo_median_man-P.tsubo_median_man).toFixed(1),'',1) : null},
+  {k:'在庫戸数', v:M.units_count, u:'戸', p:P.units_count, d:P.units_count!=null ? sign(M.units_count-P.units_count,'') : null},
+  {k:'東雲駅平均との倍率', v:M.ratio_shinonome.toFixed(3), u:'倍', p:P.ratio_shinonome, d:P.ratio_shinonome!=null ? sign(+(M.ratio_shinonome-P.ratio_shinonome).toFixed(3),'',3) : null},
+  {k:'価格改定', v:M.price_revisions, u:'件', p:P.price_revisions, d:null},
+];
+$('kpis').innerHTML = kpis.map(x => `<div class="kpi"><div class="k">${x.k}</div><div class="v">${x.v}<small>${x.u}</small></div><div class="d">${x.p!=null ? `前回 ${x.p}${x.d ? ` ／ <b>${x.d}</b>` : ''}` : '前回値なし'}</div></div>`).join('');
+
+/* decisions */
+$('decisions').innerHTML = D.decisions.length ? D.decisions.map(x => `<li><span class="chip t-${esc(x.tag)}">${esc(x.tag)}</span><span>${esc(x.text)}</span></li>`).join('') : '<li class="empty">今週はありません。</li>';
+
+/* home */
+const [hl, hh] = D.home_value_man;
+$('home-spec').textContent = `40階・北東角 ／ 壁芯${D.home_sqm}㎡（${D.home_tsubo}坪）`;
+$('home-v').textContent = `${yen(hl)}〜${yen(hh)}円`;
+$('home-status').textContent = '前週比 ' + (D.home_status || '—');
+$('north').innerHTML = D.north.length ? D.north.map((n,i) => `<tr><td>${esc(n.dir)}${esc(n.plan)} ${n.sqm}㎡</td><td class="r">${fl(n.floor)}</td><td class="r">${n.tsubo_man.toFixed(1)}万</td><td class="r">${yen(n.conv_man)}</td><td class="r">${n.is_new ? '新規' : n.change_man === 0 ? '±0万' : sign(n.change_man,'万')}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">該当なし</td></tr>';
+$('north-fn').innerHTML = '<li>換算額＝その住戸の坪単価×19.42坪。階数・角部屋かどうか・間取りが自宅と異なるため、推定市場価値の参考値として扱う。</li>';
+
+/* scatter */
+function drawScatter(){
+  const W = Math.max(340, Math.round($('scatter').clientWidth || 680)), H = W < 560 ? Math.round(W*0.95) : Math.round(W*0.55), m = {l:46, r:14, t:22, b:40};
+  const us = D.units;
+  const xs = us.map(u=>u.sqm).concat([D.home_sqm]);
+  const ys = us.map(u=>u.price_man).concat(us.filter(u=>u.prev_price_man).map(u=>u.prev_price_man), D.home_value_man);
+  const x0 = Math.floor((Math.min(...xs)-2)/5)*5, x1 = Math.ceil((Math.max(...xs)+2)/5)*5;
+  const y0 = Math.floor((Math.min(...ys)-400)/1000)*1000, y1 = Math.ceil((Math.max(...ys)+400)/1000)*1000;
+  const X = v => m.l + (v-x0)/(x1-x0)*(W-m.l-m.r), Y = v => H-m.b - (v-y0)/(y1-y0)*(H-m.t-m.b);
+  let g = '';
+  g += '<g class="grid">';
+  for (let v=y0; v<=y1; v+=1000) g += `<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}"/>`;
+  g += '</g><g class="axis">';
+  for (let v=y0; v<=y1; v+=1000) g += `<text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">${(v/10000).toFixed(1)}億</text>`;
+  for (let v=x0; v<=x1; v+=5) g += `<text x="${X(v)}" y="${H-m.b+18}" text-anchor="middle">${v}</text>`;
+  g += `<text x="${W-m.r}" y="${H-6}" text-anchor="end">専有面積（㎡）</text></g>`;
+  // median line
+  const med = D.metrics.tsubo_median_man, mp = v => med*v*0.3025;
+  let lx0 = x0, lx1 = x1;
+  if (mp(lx0) < y0) lx0 = y0/(med*0.3025); if (mp(lx1) > y1) lx1 = y1/(med*0.3025);
+  g += `<line x1="${X(lx0)}" y1="${Y(mp(lx0))}" x2="${X(lx1)}" y2="${Y(mp(lx1))}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  g += `<text x="${X(lx1)-4}" y="${Y(mp(lx1))+16}" text-anchor="end" fill="var(--ink-2)" font-size="11">中央値 ${med.toFixed(1)}万円/坪</text>`;
+  // home band
+  const hx = X(D.home_sqm);
+  g += `<rect x="${hx-5}" y="${Y(D.home_value_man[1])}" width="10" height="${Y(D.home_value_man[0])-Y(D.home_value_man[1])}" rx="4" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="1.5"/>`;
+  g += `<text x="${hx}" y="${Y(D.home_value_man[1])-7}" text-anchor="middle" fill="var(--accent)" font-size="11.5" font-weight="700">自宅推定</text>`;
+  // revisions: ghost + connector
+  us.filter(u=>u.status==='改定' && u.prev_price_man).forEach(u => {
+    g += `<line x1="${X(u.sqm)}" x2="${X(u.sqm)}" y1="${Y(u.prev_price_man)}" y2="${Y(u.price_man)}" stroke="var(--warn)" stroke-width="1.5"/>`;
+    g += `<circle cx="${X(u.sqm)}" cy="${Y(u.prev_price_man)}" r="4.5" fill="var(--surface)" stroke="var(--warn)" stroke-width="1.5"/>`;
+  });
+  // points
+  const shape = (u, cx, cy) => { const grp = GROUP[u.dir] || 'south', col = `var(--s-${grp})`, st = 'stroke="var(--surface)" stroke-width="2"';
+    if (GSHAPE[grp]==='diamond') return `<path d="M${cx} ${cy-7}L${cx+7} ${cy}L${cx} ${cy+7}L${cx-7} ${cy}Z" fill="${col}" ${st}/>`;
+    if (GSHAPE[grp]==='square') return `<rect x="${cx-5.5}" y="${cy-5.5}" width="11" height="11" rx="1.5" fill="${col}" ${st}/>`;
+    return `<circle cx="${cx}" cy="${cy}" r="6" fill="${col}" ${st}/>`; };
+  us.forEach((u,i) => {
+    const cx = X(u.sqm), cy = Y(u.price_man);
+    if (u.status==='新規') g += `<circle cx="${cx}" cy="${cy}" r="10.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+    g += shape(u, cx, cy);
+    if (u.status!=='継続') {
+      const lbl = u.status==='改定' ? '▲' + yen(u.prev_price_man - u.price_man) : '新規';
+      g += `<text x="${cx+13}" y="${cy+4}" fill="var(--ink)" font-size="11.5" font-weight="700">${lbl}</text>`;
+    }
+    g += `<circle cx="${cx}" cy="${cy}" r="13" fill="transparent" data-i="${i}" class="hit" tabindex="0" aria-label="${esc(yen(u.price_man))}円 ${u.sqm}㎡ ${esc(u.dir)}"/>`;
+  });
+  $('scatter').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="価格と専有面積の散布図">${g}</svg><div class="tip" hidden></div>`;
+  $('sc-legend').innerHTML = ['south','ew','north'].map(k => `<span><svg class="mark" viewBox="-7 -7 14 14">${k==='north'?'<path d="M0 -6L6 0L0 6L-6 0Z" fill="var(--s-north)"/>':k==='ew'?'<rect x="-5" y="-5" width="10" height="10" rx="1.5" fill="var(--s-ew)"/>':'<circle r="5.5" fill="var(--s-south)"/>'}</svg>${GNAME[k]}</span>`).join('') +
+    '<span><svg class="mark" viewBox="-7 -7 14 14"><circle r="5" fill="none" stroke="var(--warn)" stroke-width="1.5"/></svg>改定前の価格</span><span><svg class="mark" viewBox="-7 -7 14 14"><circle r="5.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/></svg>新規</span>';
+  const box = $('scatter'), tip = box.querySelector('.tip');
+  const show = el => { const u = D.units[+el.dataset.i]; const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    tip.innerHTML = `<b>${yen(u.price_man)}円</b><br>${esc(u.dir)} ${esc(u.plan)} ${u.sqm}㎡ ／ ${fl(u.floor)}<br>坪単価 ${u.tsubo_man.toFixed(1)}万円${u.status==='改定' ? `<br>改定前 ${yen(u.prev_price_man)}円` : u.status==='新規' ? '<br>今週の新規' : ''}`;
+    tip.hidden = false; const tw = tip.offsetWidth; let left = r.left - b.left + r.width/2 + 12; if (left + tw > b.width) left = r.left - b.left - tw - 4;
+    tip.style.left = Math.max(0,left) + 'px'; tip.style.top = Math.max(0, r.top - b.top - 10) + 'px'; };
+  box.querySelectorAll('.hit').forEach(el => { el.addEventListener('pointerenter', () => show(el)); el.addEventListener('focus', () => show(el)); el.addEventListener('click', () => show(el));
+    el.addEventListener('pointerleave', () => tip.hidden = true); el.addEventListener('blur', () => tip.hidden = true); });
+}
+drawScatter();
+let rsz; addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(drawScatter, 150); });
+
+/* minis */
+function mini(title, key, unit, digits){
+  const h = D.history, W = 300, H = 132, m = {l:14, r:14, t:22, b:24};
+  const vs = h.map(x=>x[key]); let lo = Math.min(...vs), hi = Math.max(...vs); const pad = (hi-lo)*0.3 || Math.max(1, Math.abs(hi)*0.02); lo -= pad; hi += pad;
+  const X = i => h.length===1 ? W/2 : m.l + i/(h.length-1)*(W-m.l-m.r), Y = v => H-m.b - (v-lo)/(hi-lo)*(H-m.t-m.b);
+  const showAll = h.length <= 6;
+  let g = `<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="var(--line)"/>`;
+  if (h.length>1) g += `<path d="M${X(0)} ${Y(vs[0])}${vs.map((v,i)=>`L${X(i)} ${Y(v)}`).join('')}L${X(vs.length-1)} ${H-m.b}L${X(0)} ${H-m.b}Z" fill="var(--accent)" fill-opacity=".08"/><path d="${vs.map((v,i)=>`${i?'L':'M'}${X(i)} ${Y(v)}`).join('')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  h.forEach((x,i) => { const last = i===h.length-1;
+    g += `<circle cx="${X(i)}" cy="${Y(vs[i])}" r="${last?5:4}" fill="${last?'var(--accent)':'var(--surface)'}" stroke="var(--accent)" stroke-width="2"><title>${md(x.date)} ${vs[i]}${unit}</title></circle>`;
+    if (showAll || last || i===0) g += `<text x="${X(i)}" y="${Y(vs[i])-10}" text-anchor="${i===0&&h.length>1?'start':last&&h.length>1?'end':'middle'}" fill="var(--ink)" font-size="12" font-weight="${last?700:500}">${vs[i]}</text>`;
+    if (showAll || last || i===0) g += `<text x="${X(i)}" y="${H-6}" text-anchor="${i===0&&h.length>1?'start':last&&h.length>1?'end':'middle'}" fill="var(--muted)" font-size="11">${md(x.date)}</text>`; });
+  return `<div class="mini"><h3>${title}<span class="sub">（${unit}）</span></h3><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}の推移">${g}</svg></div>`;
+}
+$('minis').innerHTML = mini('坪単価中央値','median','万円/坪',1) + mini('在庫戸数','units','戸') + mini('価格改定件数','revisions','件');
+
+/* units table */
+const cols = [
+  {k:'idx', t:'#', r:true}, {k:'price_man', t:'価格', r:true}, {k:'dir', t:'方角'}, {k:'floor', t:'階数', r:true},
+  {k:'sqm', t:'広さ', r:true}, {k:'plan', t:'間取り'}, {k:'tsubo_man', t:'坪単価', r:true}, {k:'status', t:'状態'}];
+let sortK = 'price_man', sortAsc = true, filt = 'all';
+const noted = D.units.filter(u => u.note); const noteNo = new Map(noted.map((u,i)=>[u, i+1]));
+function renderUnits(){
+  $('units-h').innerHTML = cols.map(c => `<th class="${c.r?'r':''}" ${c.k==='idx'?'':`aria-sort="${sortK===c.k?(sortAsc?'ascending':'descending'):'none'}"`}>${c.k==='idx'?'#':`<button class="sortbtn" data-k="${c.k}">${c.t}<span class="ar">${sortK===c.k?(sortAsc?'▲':'▼'):'↕'}</span></button>`}</th>`).join('');
+  let rows = D.units.filter(u => filt==='all' || (GROUP[u.dir]||'south')===filt);
+  rows = rows.slice().sort((a,b) => { let va=a[sortK], vb=b[sortK]; if (va==null) return 1; if (vb==null) return -1;
+    const c = typeof va==='number' ? va-vb : String(va).localeCompare(String(vb),'ja'); return sortAsc ? c : -c; });
+  document.querySelector('#units tbody').innerHTML = rows.map((u,i) => `<tr><td class="r" style="color:var(--muted)">${i+1}</td><td class="r"><b>${yen(u.price_man)}</b></td><td>${esc(u.dir)}</td><td class="r">${fl(u.floor)}</td><td class="r">${u.sqm.toFixed(2)}㎡</td><td>${esc(u.plan)}</td><td class="r">${u.tsubo_man.toFixed(1)}万</td><td><span class="chip t-${u.status}">${u.status}${u.status==='改定'?' ▲'+yen(u.prev_price_man-u.price_man):''}</span>${noteNo.has(u)?` <sup>※${noteNo.get(u)}</sup>`:''}</td></tr>`).join('') || `<tr><td colspan="8" class="empty">該当なし</td></tr>`;
+  document.querySelectorAll('.sortbtn').forEach(b => b.onclick = () => { const k = b.dataset.k; if (sortK===k) sortAsc = !sortAsc; else { sortK = k; sortAsc = true; } renderUnits(); });
+}
+$('seg').innerHTML = [['all','すべて'],['south','南・南東'],['ew','東・西'],['north','北・北西']].map(([k,t]) => `<button type="button" data-f="${k}" aria-pressed="${k==='all'}">${t}</button>`).join('');
+$('seg').querySelectorAll('button').forEach(b => b.onclick = () => { filt = b.dataset.f; $('seg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x===b)); renderUnits(); });
+renderUnits();
+$('units-fn').innerHTML = noted.map((u,i) => `<li>※${i+1} ${esc(u.dir)}${u.sqm}㎡${esc(u.plan)} ${yen(u.price_man)}円：${esc(u.note)}</li>`).join('') + `<li>坪単価＝価格÷（㎡×0.3025）。nc番号が複数ある住戸は同一住戸として1行にまとめた。</li>`;
+
+/* ended + off suumo */
+const aside = D.ended.map(e => ({k:'掲載終了', ...e})).concat(D.off_suumo.map(o => ({k:'SUUMO外', ...o})));
+const asideN = aside.filter(a => a.note || a.src);
+$('aside').innerHTML = aside.length ? aside.map(a => { const n = asideN.indexOf(a); return `<tr><td><span class="chip ${a.k==='掲載終了'?'t-掲載終了':'t-新規'}">${a.k}</span>${n>=0?` <sup>※${n+1}</sup>`:''}</td><td class="r">${yen(a.price_man)}</td><td>${esc(a.dir)}</td><td class="r">${fl(a.floor)}</td><td class="r">${a.sqm}㎡</td><td>${esc(a.plan)}</td></tr>`; }).join('') : '<tr><td colspan="6" class="empty">該当なし</td></tr>';
+$('aside-fn').innerHTML = asideN.map((a,i) => `<li>※${i+1} ${a.src?`掲載先：${esc(a.src)}。`:''}${esc(a.note||'')}</li>`).join('');
+$('issues').innerHTML = D.open_issues.length ? D.open_issues.map(s => `<li>${esc(s)}</li>`).join('') : '<li class="empty">なし</li>';
+$('notes').innerHTML = D.notes.map(s => `<li>${esc(s)}</li>`).join('');
+})();
+</script>
+
+<!-- 表示の反転ボタン（全ページ共通。見出しの右上に置く。選んだ配色はこの端末に保存） -->
+<style>
+#cc-theme{font:500 12px/1.4 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  padding:3px 11px;border-radius:999px;border:1px solid color-mix(in srgb,currentColor 35%,transparent);
+  background:transparent;color:inherit;opacity:.8;cursor:pointer;white-space:nowrap;z-index:5}
+#cc-theme:hover{opacity:1}
+#cc-theme:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+#cc-theme.cc-abs{position:absolute;top:0;right:0}
+#cc-theme.cc-fixed{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px}
+</style>
+<script>
+(function(){
+  var r=document.documentElement, K="cc-theme", pref=null, mine=false;
+  try{ pref=localStorage.getItem(K); }catch(e){}
+  var b=document.createElement("button"); b.type="button"; b.id="cc-theme";
+  var slot=document.getElementById("cc-theme-slot"), h=document.querySelector("header");
+  if(slot){ slot.appendChild(b); }
+  else if(h){
+    if(getComputedStyle(h).position==="static") h.style.position="relative";
+    var first=h.firstElementChild; if(first) first.style.paddingRight="76px";
+    b.className="cc-abs"; h.appendChild(b);
+  } else { b.className="cc-fixed"; document.body.appendChild(b); }
+  var sys=function(){ return window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"; };
+  var cur=function(){ return r.getAttribute("data-theme")||sys(); };
+  var label=function(){ var d=cur()==="dark"; b.textContent=d?"明るく":"暗く"; b.setAttribute("aria-label",d?"明るい表示にする":"暗い表示にする"); };
+  var apply=function(t){ mine=true; r.setAttribute("data-theme",t); mine=false; label(); };
+  if(pref==="dark"||pref==="light") apply(pref); else label();
+  /* 表示側が後から配色を設定しても、ここで選んだ配色を保つ */
+  if(window.MutationObserver) new MutationObserver(function(){ if(!mine&&pref&&r.getAttribute("data-theme")!==pref) apply(pref); else label(); })
+    .observe(r,{attributes:true,attributeFilter:["data-theme"]});
+  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",label); }catch(e){}
+  b.addEventListener("click",function(){ pref=cur()==="dark"?"light":"dark"; try{ localStorage.setItem(K,pref); }catch(e){} apply(pref); });
+})();
+</script>
