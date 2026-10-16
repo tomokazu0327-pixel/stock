@@ -1,7 +1,10 @@
 <title>パークタワー東雲 売出し週報</title>
 <!--
-  設計メモ（週次タスクはこのファイルを変更しない。データは __PAGE_DATA__ に差し込む）
-  - 構成は「概要 → データ」。概要＝今週の変化・指標・要判断事項・自宅評価、データ＝散布図・推移・全住戸表。
+  設計メモ（週次タスクはこのファイルを変更しない。データは末尾の page-data の script 要素に差し込む）
+  - 構成は「概要 → データ」。概要＝自宅評価 → 定点観測 → 今週の変化 → 要判断事項の順、すべて1行1項目の箇条書き。
+    データ＝散布図・推移・北/北西換算表・全住戸表。
+  - 概要の自宅評価と定点観測は「値と前週比」だけを出す（前回値そのものは出さない。利用者の指定 2026-10-17）。
+  - 今週の変化はレンダラが units と前回データから自動で作る（1住戸1行）。summary は自動で出ない補足だけ。
   - 自宅の取得価額・ローン残高・売却後現金残高は載せない（利用者の指定）。推定市場価値と換算表のみ。
   - 方角は3群に畳む（南系＝南・南東・南西／東・西／北系＝北・北西・北東）。散布図の色は3色まで。形でも区別する。
   - 散布図の破線は「今週の坪単価中央値で買った場合の価格」。線より上は中央値より割高。
@@ -43,32 +46,33 @@ h1{font-family:var(--f-display);font-size:clamp(26px,6vw,36px);line-height:1.25;
 h2{font-size:17px;margin:0 0 10px;line-height:1.4}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
 .sub{font-size:12.5px;color:var(--muted);margin:0}
-.changes{margin:0;padding:0;list-style:none;display:grid;gap:8px}
-.changes li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
-.changes li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:.7em}
-.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (min-width:720px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px;min-width:0}
-.kpi .k{font-size:12px;color:var(--ink-2)}
-.kpi .v{font-size:26px;font-weight:700;line-height:1.2}
-.kpi .v small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:2px}
-.kpi .d{font-size:12px;color:var(--muted)}
-.kpi .d b{font-weight:700;color:var(--ink-2)}
+.facts{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.facts li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.facts li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:.72em}
+.facts .k{color:var(--ink-2);margin-right:.6em}
+.facts .v{font-weight:700;font-size:16px}
+.facts .d{white-space:nowrap;margin-left:.6em;color:var(--ink-2)}
+.facts .d b{color:var(--accent);font-weight:700}
+.facts .note{display:block;font-size:12.5px;color:var(--muted)}
+.changes{margin:0;padding:0;list-style:none;display:grid}
+.changes li{display:grid;grid-template-columns:4.4em 1fr;gap:10px;padding-block:9px;border-top:1px solid var(--line);align-items:start}
+.changes li:first-child{border-top:0;padding-top:2px}
+.changes .chip{justify-self:start;margin-top:3px}
+.changes .dt{font-size:13.5px;color:var(--ink-2)}
+.changes .dt b{color:var(--ink)}
+.changes .dt .nw{white-space:nowrap}
 .two{display:grid;gap:16px}
 @media (min-width:860px){.two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
 .chip{display:inline-block;font-size:11.5px;font-weight:700;line-height:1;padding:5px 7px;border-radius:4px;white-space:nowrap;letter-spacing:.02em}
-.t-改定{background:var(--warn-soft);color:var(--warn)}
+.t-改定,.t-価格改定,.t-値下げ,.t-値上げ{background:var(--warn-soft);color:var(--warn)}
 .t-新規{background:var(--info-soft);color:var(--info)}
 .t-掲載終了{background:var(--off-soft);color:var(--off)}
 .t-継続{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 6px}
-.t-北・北西,.t-未確認,.t-その他{background:var(--off-soft);color:var(--ink-2)}
+.t-北・北西,.t-未確認,.t-その他,.t-補足{background:var(--off-soft);color:var(--ink-2)}
 .decisions{margin:0;padding:0;list-style:none;display:grid}
 .decisions li{display:grid;grid-template-columns:5.6em 1fr;gap:10px;padding-block:10px;border-top:1px solid var(--line);align-items:start}
 .decisions li:first-child{border-top:0;padding-top:2px}
 .decisions .chip{justify-self:start;margin-top:3px}
-.home-v{font-size:clamp(22px,5.4vw,28px);font-weight:700;line-height:1.3;margin:4px 0 6px}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
-.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--warn)}
 .tbl-wrap{overflow-x:auto;margin-top:12px}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -115,30 +119,23 @@ tbody tr:last-child td{border-bottom:0}
 
   <section class="part" aria-labelledby="p1">
     <h2 class="part-h" id="p1">概要</h2>
-    <div class="panel">
-      <h2>今週の変化</h2>
-      <ul class="changes" id="summary"></ul>
-    </div>
-    <div class="kpis num" id="kpis"></div>
     <div class="two">
       <div class="panel">
-        <h2>要判断事項</h2>
-        <ul class="decisions" id="decisions"></ul>
+        <h2>自宅評価</h2>
+        <ul class="facts num" id="home"></ul>
       </div>
       <div class="panel">
-        <h2>自宅評価</h2>
-        <p class="sub" id="home-spec"></p>
-        <div class="home-v num" id="home-v"></div>
-        <span class="pill" id="home-status"></span>
-        <div class="tbl-wrap">
-          <table class="num">
-            <caption class="sub" style="text-align:left;padding-bottom:6px">北・北西向き住戸の坪単価を19.42坪に換算した参考値</caption>
-            <thead><tr><th>住戸</th><th class="r">階数</th><th class="r">坪単価</th><th class="r">換算額</th><th class="r">前回比</th></tr></thead>
-            <tbody id="north"></tbody>
-          </table>
-        </div>
-        <ol class="fn" id="north-fn"></ol>
+        <h2>定点観測</h2>
+        <ul class="facts num" id="kpis"></ul>
       </div>
+    </div>
+    <div class="panel">
+      <h2>今週の変化</h2>
+      <ul class="changes num" id="summary"></ul>
+    </div>
+    <div class="panel">
+      <h2>要判断事項</h2>
+      <ul class="decisions" id="decisions"></ul>
     </div>
   </section>
 
@@ -153,6 +150,18 @@ tbody tr:last-child td{border-bottom:0}
     <div>
       <h2>定点観測の推移</h2>
       <div class="minis" id="minis"></div>
+    </div>
+    <div class="panel">
+      <h2>北・北西向き住戸の換算（自宅評価の参考）</h2>
+      <p class="sub" id="home-spec"></p>
+      <div class="tbl-wrap">
+        <table class="num">
+          <caption class="sub" style="text-align:left;padding-bottom:6px">北・北西向き住戸の坪単価を19.42坪に換算した参考値</caption>
+          <thead><tr><th>住戸</th><th class="r">階数</th><th class="r">坪単価</th><th class="r">換算額</th><th class="r">前回比</th></tr></thead>
+          <tbody id="north"></tbody>
+        </table>
+      </div>
+      <ol class="fn" id="north-fn"></ol>
     </div>
     <div class="panel">
       <div class="tools">
@@ -204,26 +213,41 @@ const sign = (v, unit, digits) => { if (v == null) return ''; const r = digits!=
 const M = D.metrics, P = D.prev_metrics || {};
 $('meta').innerHTML = `<span>${longDate(D.date)}更新</span>${D.prev_date ? `<span>前回 ${md(D.prev_date)}</span>` : ''}<span>SUUMO ${M.suumo_count}件 → 名寄せ後 ${M.units_count}戸</span>`;
 
-/* summary */
-$('summary').innerHTML = (D.summary.length ? D.summary : ['今週の変化はありません。']).map(s => `<li><span>${esc(s)}</span></li>`).join('');
+/* 概要：1行1項目。値と前週比だけを出す */
+const fact = (k, v, d, note) => `<li><span><span class="k">${k}</span><span class="v">${v}</span>${d ? `<span class="d">${d === '前週値なし' ? d : `前週比 <b>${d}</b>`}</span>` : ''}${note ? `<span class="note">${esc(note)}</span>` : ''}</span></li>`;
+const wow = (cur, prev, unit, digits) => { if (prev == null) return '前週値なし'; const d = +(cur - prev).toFixed(digits || 0); return d === 0 ? '±0' + unit : sign(d, unit, digits); };
+const yenDiff = v => v === 0 ? '±0円' : (v > 0 ? '+' : '−') + yen(Math.abs(v)) + '円';
 
-/* KPI */
-const kpis = [
-  {k:'坪単価中央値', v:M.tsubo_median_man.toFixed(1), u:'万円/坪', p:P.tsubo_median_man, d:P.tsubo_median_man!=null ? sign(+(M.tsubo_median_man-P.tsubo_median_man).toFixed(1),'',1) : null},
-  {k:'在庫戸数', v:M.units_count, u:'戸', p:P.units_count, d:P.units_count!=null ? sign(M.units_count-P.units_count,'') : null},
-  {k:'東雲駅平均との倍率', v:M.ratio_shinonome.toFixed(3), u:'倍', p:P.ratio_shinonome, d:P.ratio_shinonome!=null ? sign(+(M.ratio_shinonome-P.ratio_shinonome).toFixed(3),'',3) : null},
-  {k:'価格改定', v:M.price_revisions, u:'件', p:P.price_revisions, d:null},
-];
-$('kpis').innerHTML = kpis.map(x => `<div class="kpi"><div class="k">${x.k}</div><div class="v">${x.v}<small>${x.u}</small></div><div class="d">${x.p!=null ? `前回 ${x.p}${x.d ? ` ／ <b>${x.d}</b>` : ''}` : '前回値なし'}</div></div>`).join('');
+/* 自宅評価 */
+const [hl, hh] = D.home_value_man, ph = D.prev_home_value_man;
+const homeWow = !ph ? '前週値なし' : (hl - ph[0] === hh - ph[1]) ? yenDiff(hl - ph[0]) : `下限 ${yenDiff(hl - ph[0])}・上限 ${yenDiff(hh - ph[1])}`;
+$('home').innerHTML = fact('推定市場価値', `${yen(hl)}〜${yen(hh)}円`, homeWow, D.home_status);
+
+/* 定点観測 */
+$('kpis').innerHTML = [
+  fact('坪単価中央値', `${M.tsubo_median_man.toFixed(1)}万円/坪`, wow(M.tsubo_median_man, P.tsubo_median_man, '万円', 1)),
+  fact('在庫戸数', `${M.units_count}戸`, wow(M.units_count, P.units_count, '戸')),
+  fact('東雲駅平均との倍率', `${M.ratio_shinonome.toFixed(3)}倍`, wow(M.ratio_shinonome, P.ratio_shinonome, '', 3)),
+  fact('価格改定', `${M.price_revisions}件`, wow(M.price_revisions, P.price_revisions, '件')),
+].join('');
+
+/* 今週の変化：1住戸1行（レンダラが自動生成）＋補足 */
+const unitName = c => `${esc(c.dir)}向き ${esc(c.plan)}・${c.sqm}㎡${c.floor != null ? '・' + c.floor + '階' : ''}`;
+const chgDetail = c => {
+  if ((c.kind === '値下げ' || c.kind === '値上げ') && c.prev_price_man != null)
+    return `${yen(c.prev_price_man)}円 → <b>${yen(c.price_man)}円</b><span class="nw">（${yenDiff(c.price_man - c.prev_price_man)}）</span>`;
+  if (c.kind === '掲載終了') return `最終掲載価格 ${yen(c.price_man)}円`;
+  return `<b>${yen(c.price_man)}円</b>`;
+};
+const chgItems = (D.changes || []).map(c => `<li><span class="chip t-${esc(c.kind)}">${esc(c.kind)}</span><div><div>${unitName(c)}</div><div class="dt">${chgDetail(c)}</div></div></li>`)
+  .concat((D.summary || []).map(s => `<li><span class="chip t-補足">補足</span><div>${esc(s)}</div></li>`));
+$('summary').innerHTML = chgItems.length ? chgItems.join('') : '<li class="empty">今週は新規・価格改定・掲載終了なし。</li>';
 
 /* decisions */
 $('decisions').innerHTML = D.decisions.length ? D.decisions.map(x => `<li><span class="chip t-${esc(x.tag)}">${esc(x.tag)}</span><span>${esc(x.text)}</span></li>`).join('') : '<li class="empty">今週はありません。</li>';
 
-/* home */
-const [hl, hh] = D.home_value_man;
-$('home-spec').textContent = `40階・北東角 ／ 壁芯${D.home_sqm}㎡（${D.home_tsubo}坪）`;
-$('home-v').textContent = `${yen(hl)}〜${yen(hh)}円`;
-$('home-status').textContent = '前週比 ' + (D.home_status || '—');
+/* 北・北西の換算表（データ側） */
+$('home-spec').textContent = `自宅：40階・北東角 ／ 壁芯${D.home_sqm}㎡（${D.home_tsubo}坪）`;
 $('north').innerHTML = D.north.length ? D.north.map((n,i) => `<tr><td>${esc(n.dir)}${esc(n.plan)} ${n.sqm}㎡</td><td class="r">${fl(n.floor)}</td><td class="r">${n.tsubo_man.toFixed(1)}万</td><td class="r">${yen(n.conv_man)}</td><td class="r">${n.is_new ? '新規' : n.change_man === 0 ? '±0万' : sign(n.change_man,'万')}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">該当なし</td></tr>';
 $('north-fn').innerHTML = '<li>換算額＝その住戸の坪単価×19.42坪。階数・角部屋かどうか・間取りが自宅と異なるため、推定市場価値の参考値として扱う。</li>';
 
