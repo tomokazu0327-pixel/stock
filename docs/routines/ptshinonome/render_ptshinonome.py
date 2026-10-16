@@ -43,6 +43,10 @@ STATION_AVG = 535          # 東雲駅平均（自作指標、万円/坪）
 HOME_TSUBO = 19.42         # 自宅 64.19㎡
 HOME_SQM = 64.19
 NORTH = ("北", "北西")
+# history に home（推定市場価値の下限・上限）が入る前の週の値。
+# 9/19〜10/16 は Drive の ptshinonome-data-*.json の home_value_man、9/11 は基準値（2026-10-17 確認）
+HOME_BACKFILL = {d: [11550, 12300] for d in
+                 ("2026-09-11", "2026-09-19", "2026-09-25", "2026-10-02", "2026-10-09", "2026-10-16")}
 
 
 def tsubo_price(price, sqm):
@@ -139,9 +143,12 @@ def main(inp_path, tpl_path, out_path, next_path):
                         "floor": e.get("floor"), "price_man": e["price_man"], "prev_price_man": None})
     changes.sort(key=lambda c: (kind_rank[c["kind"]], c["price_man"], c["sqm"]))
 
-    history = [h for h in prev.get("history", []) if h["date"] != d["date"]]
+    history = [dict(h) for h in prev.get("history", []) if h["date"] != d["date"]]
+    for h in history:
+        if "home" not in h and h["date"] in HOME_BACKFILL:
+            h["home"] = HOME_BACKFILL[h["date"]]
     history.append({"date": d["date"], "median": med, "units": len(units),
-                    "ratio": ratio, "revisions": revisions})
+                    "ratio": ratio, "revisions": revisions, "home": list(d["home_value_man"])})
     history.sort(key=lambda h: h["date"])
 
     page = {

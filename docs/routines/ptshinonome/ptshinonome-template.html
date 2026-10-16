@@ -1,8 +1,9 @@
 <title>パークタワー東雲 売出し週報</title>
 <!--
   設計メモ（週次タスクはこのファイルを変更しない。データは末尾の page-data の script 要素に差し込む）
-  - 構成は「概要 → データ」。概要＝自宅評価 → 定点観測 → 今週の変化 → 要判断事項の順。
+  - 構成は「概要 → データ」。概要＝自宅評価（＋推移グラフ）→ 価格と広さ → 定点観測 → 今週の変化 → 要判断事項の順。
     自宅評価と定点観測は数字のカード、今週の変化と要判断事項は1行1項目の箇条書き（利用者の指定 2026-10-17）。
+  - 見出しの書体は本文と同じ Zen Kaku Gothic New の太字（入力台帳・日ごとの予算案に揃える。利用者の指定 2026-10-17）。
     データ＝散布図・推移・北/北西換算表・全住戸表。
   - 概要の自宅評価と定点観測は「値と前週比」だけを出す（前回値そのものは出さない。利用者の指定 2026-10-17）。
   - 今週の変化はレンダラが units と前回データから自動で作る（1住戸1行）。summary は自動で出ない補足だけ。
@@ -12,7 +13,7 @@
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
 /* layout: 1カラムの読み物。上に概要（判断材料）、下にデータ（根拠）。スマホ幅基準、広い画面では概要を2列 */
 :root{
@@ -20,7 +21,6 @@
   --accent:#1c5a72; --accent-soft:#e2eef3;
   --warn:#9a5a0a; --warn-soft:#fbefdc; --info:#1c5a72; --info-soft:#e2eef3; --off:#5f6a73; --off-soft:#eceff1;
   --s-south:#2a78d6; --s-north:#eb6834; --s-ew:#1baf7a;
-  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
   --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -39,7 +39,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 .num{font-variant-numeric:tabular-nums}
 header{display:grid;gap:4px;padding-block:8px 4px;border-bottom:1px solid var(--line)}
 .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted)}
-h1{font-family:var(--f-display);font-size:clamp(26px,6vw,36px);line-height:1.25;margin:0;text-wrap:balance}
+h1{font-family:var(--f-body);font-size:24px;font-weight:700;line-height:1.3;margin:0;text-wrap:balance}
 .meta{font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 14px;padding-bottom:12px}
 .part{display:grid;gap:16px}
 .part-h{display:flex;align-items:baseline;gap:10px;margin:0;font-size:13px;letter-spacing:.12em;color:var(--accent);font-weight:700}
@@ -58,6 +58,9 @@ h2{font-size:17px;margin:0 0 10px;line-height:1.4}
 .kpi .v small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:2px}
 .kpi .d{font-size:12px;color:var(--muted)}
 .kpi .d b{font-weight:700;color:var(--ink-2)}
+.kpi.trend{position:relative}
+.kpi.trend svg{display:block;width:100%;height:auto;overflow:visible}
+.kpi.trend .tip{min-width:0;white-space:nowrap}
 .changes{margin:0;padding:0;list-style:none;display:grid}
 .changes li{display:grid;grid-template-columns:4.4em 1fr;gap:10px;padding-block:9px;border-top:1px solid var(--line);align-items:start}
 .changes li:first-child{border-top:0;padding-top:2px}
@@ -127,6 +130,12 @@ tbody tr:last-child td{border-bottom:0}
       <h2>自宅評価</h2>
       <div class="kpis num" id="home"></div>
     </div>
+    <div class="panel">
+      <h2>価格と広さ</h2>
+      <p class="sub">点は今週SUUMOに掲載中の住戸。破線は今週の坪単価中央値で換算した価格。縦の帯は自宅の推定市場価値。</p>
+      <div class="legend" id="sc-legend"></div>
+      <div class="chart" id="scatter"></div>
+    </div>
     <div class="kgroup">
       <h2>定点観測</h2>
       <div class="kpis num" id="kpis"></div>
@@ -143,12 +152,6 @@ tbody tr:last-child td{border-bottom:0}
 
   <section class="part" aria-labelledby="p2">
     <h2 class="part-h" id="p2">データ</h2>
-    <div class="panel">
-      <h2>価格と広さ</h2>
-      <p class="sub">点は今週SUUMOに掲載中の住戸。破線は今週の坪単価中央値で換算した価格。縦の帯は自宅の推定市場価値。</p>
-      <div class="legend" id="sc-legend"></div>
-      <div class="chart" id="scatter"></div>
-    </div>
     <div>
       <h2>定点観測の推移</h2>
       <div class="minis" id="minis"></div>
@@ -223,7 +226,40 @@ const yenDiff = v => v === 0 ? '±0円' : (v > 0 ? '+' : '−') + yen(Math.abs(v
 /* 自宅評価 */
 const [hl, hh] = D.home_value_man, ph = D.prev_home_value_man;
 const homeWow = !ph ? '前週値なし' : (hl - ph[0] === hh - ph[1]) ? yenDiff(hl - ph[0]) : `下限 ${yenDiff(hl - ph[0])}・上限 ${yenDiff(hh - ph[1])}`;
-$('home').innerHTML = card('推定市場価値', `${yen(hl)}〜${yen(hh)}`, '円', homeWow, D.home_status, true);
+$('home').innerHTML = card('推定市場価値', `${yen(hl)}〜${yen(hh)}円`, '', homeWow, D.home_status, true)
+  + '<div class="kpi wide trend"><div class="k">推定市場価値の推移</div><div id="home-trend"></div><div class="tip" hidden></div></div>';
+
+/* 推定市場価値の週別推移（上限・下限の帯）。カードの幅に合わせて描き直す */
+function drawHomeTrend(){
+  const box = $('home-trend'), card = box.parentElement, tip = card.querySelector('.tip');
+  const h = (D.history || []).filter(x => Array.isArray(x.home));
+  if (!h.length) { box.innerHTML = '<div class="d">推移データなし</div>'; return; }
+  const W = Math.max(260, Math.round(box.clientWidth || 300)), H = 96, m = {l:4, r:4, t:20, b:22};
+  const lo0 = Math.min(...h.map(x => x.home[0])), hi0 = Math.max(...h.map(x => x.home[1]));
+  const pad = Math.max((hi0 - lo0) * 0.25, 200), lo = lo0 - pad, hi = hi0 + pad;
+  const X = i => h.length === 1 ? W/2 : m.l + 8 + i/(h.length-1)*(W - m.l - m.r - 16), Y = v => H - m.b - (v - lo)/(hi - lo)*(H - m.t - m.b);
+  const top = h.map((x,i) => `${X(i)} ${Y(x.home[1])}`), bot = h.map((x,i) => `${X(i)} ${Y(x.home[0])}`).reverse();
+  let g = `<line x1="0" x2="${W}" y1="${H-m.b}" y2="${H-m.b}" stroke="var(--line)"/>`;
+  if (h.length > 1) g += `<path d="M${top.join('L')}L${bot.join('L')}Z" fill="var(--accent)" fill-opacity=".14"/>`
+    + `<path d="M${top.join('L')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`
+    + `<path d="M${h.map((x,i) => `${X(i)} ${Y(x.home[0])}`).join('L')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  const L = h.length - 1, showAll = h.length <= 8;
+  h.forEach((x,i) => { const last = i === L;
+    [1,0].forEach(k => g += `<circle cx="${X(i)}" cy="${Y(x.home[k])}" r="${last?4.5:3.5}" fill="${last?'var(--accent)':'var(--surface)'}" stroke="var(--accent)" stroke-width="2"/>`);
+    if (showAll || last || i === 0) g += `<text x="${X(i)}" y="${H-6}" text-anchor="${h.length>1&&i===0?'start':h.length>1&&last?'end':'middle'}" fill="var(--muted)" font-size="11">${md(x.date)}</text>`; });
+  g += `<text x="${X(L)-8}" y="${Y(h[L].home[1])-8}" text-anchor="${h.length>1?'end':'middle'}" fill="var(--ink)" font-size="11.5" font-weight="700">${yen(h[L].home[1])}</text>`;
+  g += `<text x="${X(L)-8}" y="${Y(h[L].home[0])-7}" text-anchor="${h.length>1?'end':'middle'}" fill="var(--ink)" font-size="11.5" font-weight="700">${yen(h[L].home[0])}</text>`;
+  const step = h.length > 1 ? (X(1) - X(0)) : W;
+  h.forEach((x,i) => g += `<rect class="hit" data-i="${i}" x="${X(i)-step/2}" y="0" width="${step}" height="${H}" fill="transparent" tabindex="0" aria-label="${md(x.date)} ${yen(x.home[0])}〜${yen(x.home[1])}円"/>`);
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="推定市場価値の週別推移">${g}</svg>`;
+  const show = el => { const x = h[+el.dataset.i]; tip.innerHTML = `<b>${md(x.date)}</b> ${yen(x.home[0])}〜${yen(x.home[1])}円`; tip.hidden = false;
+    const r = el.getBoundingClientRect(), c = card.getBoundingClientRect(); let left = r.left - c.left + r.width/2 - tip.offsetWidth/2;
+    left = Math.max(8, Math.min(left, c.width - tip.offsetWidth - 8)); tip.style.left = left + 'px'; tip.style.top = '6px'; };
+  box.querySelectorAll('.hit').forEach(el => { el.addEventListener('pointerenter', () => show(el)); el.addEventListener('focus', () => show(el)); el.addEventListener('click', () => show(el));
+    el.addEventListener('pointerleave', () => tip.hidden = true); el.addEventListener('blur', () => tip.hidden = true); });
+}
+drawHomeTrend();
+let rszH; addEventListener('resize', () => { clearTimeout(rszH); rszH = setTimeout(drawHomeTrend, 150); });
 
 /* 定点観測 */
 $('kpis').innerHTML = [
@@ -234,7 +270,7 @@ $('kpis').innerHTML = [
 ].join('');
 
 /* 今週の変化：1住戸1行（レンダラが自動生成）＋補足 */
-const unitName = c => `${esc(c.dir)}向き ${esc(c.plan)}・${c.sqm}㎡${c.floor != null ? '・' + c.floor + '階' : ''}`;
+const unitName = c => `${c.floor != null ? c.floor + '階 ' : ''}${c.sqm}㎡（${esc(c.dir)}向き・${esc(c.plan)}）`;
 const chgDetail = c => {
   if ((c.kind === '値下げ' || c.kind === '値上げ') && c.prev_price_man != null)
     return `${yen(c.prev_price_man)}円 → <b>${yen(c.price_man)}円</b><span class="nw">（${yenDiff(c.price_man - c.prev_price_man)}）</span>`;
@@ -289,15 +325,26 @@ function drawScatter(){
     if (GSHAPE[grp]==='diamond') return `<path d="M${cx} ${cy-7}L${cx+7} ${cy}L${cx} ${cy+7}L${cx-7} ${cy}Z" fill="${col}" ${st}/>`;
     if (GSHAPE[grp]==='square') return `<rect x="${cx-5.5}" y="${cy-5.5}" width="11" height="11" rx="1.5" fill="${col}" ${st}/>`;
     return `<circle cx="${cx}" cy="${cy}" r="6" fill="${col}" ${st}/>`; };
+  const lbls = [];
   us.forEach((u,i) => {
     const cx = X(u.sqm), cy = Y(u.price_man);
     if (u.status==='新規') g += `<circle cx="${cx}" cy="${cy}" r="10.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
     g += shape(u, cx, cy);
-    if (u.status!=='継続') {
-      const lbl = u.status==='改定' ? '▲' + yen(u.prev_price_man - u.price_man) : '新規';
-      g += `<text x="${cx+13}" y="${cy+4}" fill="var(--ink)" font-size="11.5" font-weight="700">${lbl}</text>`;
-    }
+    if (u.status!=='継続') lbls.push({cx, cy, t: u.status==='改定' ? '▲' + yen(u.prev_price_man - u.price_man) : '新規',
+      pri: u.status==='改定' ? Math.abs(u.prev_price_man - u.price_man) : 1e9});
     g += `<circle cx="${cx}" cy="${cy}" r="13" fill="transparent" data-i="${i}" class="hit" tabindex="0" aria-label="${esc(yen(u.price_man))}円 ${u.sqm}㎡ ${esc(u.dir)}"/>`;
+  });
+  const placed = [], tw = t => [...t].reduce((a,ch) => a + (/[0-9,.]/.test(ch) ? 7 : 12), 4);
+  lbls.sort((a,b) => b.pri - a.pri).forEach(l => {
+    const w = tw(l.t);
+    for (const side of [1, -1]) {
+      const x0 = side > 0 ? l.cx + 13 : l.cx - 13 - w, b = {x0, x1: x0 + w, y0: l.cy - 10, y1: l.cy + 5};
+      if (b.x0 < m.l || b.x1 > W - m.r) continue;
+      if (placed.some(q => !(b.x1 < q.x0 || b.x0 > q.x1 || b.y1 < q.y0 || b.y0 > q.y1))) continue;
+      placed.push(b);
+      g += `<text x="${side > 0 ? b.x0 : b.x1}" y="${l.cy+4}" text-anchor="${side > 0 ? 'start' : 'end'}" fill="var(--ink)" font-size="11.5" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3" stroke-linejoin="round" pointer-events="none">${l.t}</text>`;
+      break;
+    }
   });
   $('scatter').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="価格と専有面積の散布図">${g}</svg><div class="tip" hidden></div>`;
   $('sc-legend').innerHTML = ['south','ew','north'].map(k => `<span><svg class="mark" viewBox="-7 -7 14 14">${k==='north'?'<path d="M0 -6L6 0L0 6L-6 0Z" fill="var(--s-north)"/>':k==='ew'?'<rect x="-5" y="-5" width="10" height="10" rx="1.5" fill="var(--s-ew)"/>':'<circle r="5.5" fill="var(--s-south)"/>'}</svg>${GNAME[k]}</span>`).join('') +
