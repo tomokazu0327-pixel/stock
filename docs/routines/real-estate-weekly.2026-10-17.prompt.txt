@@ -64,7 +64,7 @@ SUUMOから消えたが他サイトで掲載が確認できた住戸は off_suum
 5. テンプレートとレンダラの取得（中身を手で書き写さない）
 ・Artifact ツールを action: "read"、url: https://claude.ai/artifact/Lko2fYBwrtK1VcfCFUPJMT、paths: ["assets/ptshinonome-template.html", "assets/render_ptshinonome.py"] で呼ぶ。保存先のフォルダから作業ディレクトリへ cp し、ファイル名は ptshinonome-template.html・render_ptshinonome.py にする。
 ・次の1行で中身を確かめる。
-python3 -c 'import hashlib;w={"ptshinonome-template.html":"29b8dcf27f9dbe567f18ba375b8aa3b6d3ccc812fdcd8a314d8f89d374821e25","render_ptshinonome.py":"ad5c056126e2890842baebf64bded498aeb1ac1fabfe07c41546cfaecd17548c"};print({f:("OK" if hashlib.sha256(open(f,"rb").read()).hexdigest()==h else "NG") for f,h in w.items()})'
+python3 -c 'import hashlib;w={"ptshinonome-template.html":"725c65a138b1f3b022870f5d7d65c7bc0cf82544e2505c73cf86f0126169391f","render_ptshinonome.py":"ad5c056126e2890842baebf64bded498aeb1ac1fabfe07c41546cfaecd17548c"};print({f:("OK" if hashlib.sha256(open(f,"rb").read()).hexdigest()==h else "NG") for f,h in w.items()})'
 ・NG が出た場合や read が使えない場合はページ更新をやめ、手順8のチャット出力に「テンプレート取得失敗のためページ未更新」と書き、従来どおりレポート全文（①〜⑤）をチャットに出す。
 
 6. input.json を作り、レンダラで計算・描画する
@@ -72,7 +72,7 @@ python3 -c 'import hashlib;w={"ptshinonome-template.html":"29b8dcf27f9dbe567f18b
 ・坪単価・中央値・倍率・改定件数・北/北西の19.42坪換算・history の追記はレンダラが計算する。自分で計算した数値を input.json に書かない。
 ・python3 render_ptshinonome.py input.json ptshinonome-template.html out.html next-data.json
 ・標準出力の検算行（件数・中央値・新規・改定・掲載終了）が手順4の判定と一致するか確かめる。食い違えば input.json を直して再実行する。
-・週報ページの概要は「自宅評価（推定市場価値と、その中央値・前週比・据え置き週数）→ 価格と広さ → 定点観測 → 今週の変化 → 要判断事項」の順に出る（利用者の指定）。自宅評価と定点観測は値と前週比だけの数字のカードで、レンダラが自動で出す。据え置き週数は history に毎週自動で積まれる推定市場価値から数える。今週の変化と要判断事項は1行1項目の箇条書き。
+・週報ページの概要は「自宅評価（推定市場価値と、その中央値・前週比・据え置き週数）→ 定点観測 → 今週の変化 → 要判断事項 → 価格と広さ」の順に出る（利用者の指定）。自宅評価と定点観測は値と前週比だけの数字のカードで、レンダラが自動で出す。据え置き週数は history に毎週自動で積まれる推定市場価値から数える。今週の変化と要判断事項は1行1項目の箇条書き。
 ・文章の中で住戸を書くときは「38階 62.67㎡（北向き・2LDK）」の形にそろえる（階数が未取得なら「62.67㎡（北向き・2LDK）」）。
 ・前週比・値下げ額などのマイナスは「▲」で書く（例 ▲1,250万）。プラスは「+」、変化なしは「±0」（利用者の指定）。
 ・input.json に書く文章：
