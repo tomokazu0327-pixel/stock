@@ -64,7 +64,7 @@ SUUMOから消えたが他サイトで掲載が確認できた住戸は off_suum
 5. テンプレートとレンダラの取得（中身を手で書き写さない）
 ・Artifact ツールを action: "read"、url: https://claude.ai/artifact/Lko2fYBwrtK1VcfCFUPJMT、paths: ["assets/ptshinonome-template.html", "assets/render_ptshinonome.py"] で呼ぶ。保存先のフォルダから作業ディレクトリへ cp し、ファイル名は ptshinonome-template.html・render_ptshinonome.py にする。
 ・次の1行で中身を確かめる。
-python3 -c 'import hashlib;w={"ptshinonome-template.html":"ed5682653d5a285536cc191485831297bf01cc5f35a950cf434dd1ecc655b150","render_ptshinonome.py":"34a36ff14e6ab39a63038fdd6b13f56d74d90751bd41ac4c11071a1f2cad8312"};print({f:("OK" if hashlib.sha256(open(f,"rb").read()).hexdigest()==h else "NG") for f,h in w.items()})'
+python3 -c 'import hashlib;w={"ptshinonome-template.html":"448c1a5cb1a5f1cc1848dd5431910406d6023ffe57041a9276b5aa83f0e2f7b9","render_ptshinonome.py":"34a36ff14e6ab39a63038fdd6b13f56d74d90751bd41ac4c11071a1f2cad8312"};print({f:("OK" if hashlib.sha256(open(f,"rb").read()).hexdigest()==h else "NG") for f,h in w.items()})'
 ・NG が出た場合や read が使えない場合はページ更新をやめ、手順8のチャット出力に「テンプレート取得失敗のためページ未更新」と書き、従来どおりレポート全文（①〜⑤）をチャットに出す。
 
 6. input.json を作り、レンダラで計算・描画する
@@ -72,7 +72,7 @@ python3 -c 'import hashlib;w={"ptshinonome-template.html":"ed5682653d5a285536cc1
 ・坪単価・中央値・倍率・改定件数・北/北西の19.42坪換算・history の追記はレンダラが計算する。自分で計算した数値を input.json に書かない。
 ・python3 render_ptshinonome.py input.json ptshinonome-template.html out.html next-data.json
 ・標準出力の検算行（件数・中央値・新規・改定・掲載終了）が手順4の判定と一致するか確かめる。食い違えば input.json を直して再実行する。
-・週報ページの概要は「自宅評価 → 定点観測 → 今週の変化 → 要判断事項」の順に、1行1項目の箇条書きで出る（利用者の指定）。自宅評価と定点観測は値と前週比だけで、レンダラが自動で出す。
+・週報ページの概要は「自宅評価 → 定点観測 → 今週の変化 → 要判断事項」の順に出る（利用者の指定）。自宅評価と定点観測は値と前週比だけの数字のカードで、レンダラが自動で出す。今週の変化と要判断事項は1行1項目の箇条書き。
 ・input.json に書く文章：
   summary：「今週の変化」の箇条書き（新規・値下げ／値上げ・掲載終了を1住戸1行）はレンダラが自動で作るので書かない。summary には自動で出ない補足だけを0〜2件書く（例：nc番号の入れ替えで継続扱いにした住戸、同一住戸か未確認の新規）。1件1事項、40字以内。価格の列挙と、定点観測の数値（中央値・在庫・倍率・改定件数）は書かない。無ければ空配列。
   decisions：所有者が判断すべき材料を1項目1行で書く。60字以内。1項目に複数住戸の明細を並べない。今週の変化に出る価格の前後を繰り返さない。nc番号・坪単価は書かない（必要なら notes へ）。北・北西向き住戸と55〜70㎡台の住戸の価格改定・新規・掲載終了は必ず挙げる（55〜70㎡台で複数あれば「55〜70㎡台で3戸が値下げ（内訳は今週の変化）」のように1行にまとめる）。該当が無い区分は「北・北西向き／55〜70㎡台の新規・掲載終了は今週なし」のように1行にまとめる。tag は 価格改定／新規／掲載終了／北・北西／未確認／その他 のいずれか。
