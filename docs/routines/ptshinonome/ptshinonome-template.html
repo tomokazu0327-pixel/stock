@@ -1,7 +1,9 @@
 <title>パークタワー東雲 売出し週報</title>
 <!--
   設計メモ（週次タスクはこのファイルを変更しない。データは末尾の page-data の script 要素に差し込む）
-  - 構成は「概要 → データ」。概要＝自宅評価（＋推移グラフ）→ 価格と広さ → 定点観測 → 今週の変化 → 要判断事項の順。
+  - 構成は「概要 → データ」。概要＝自宅評価（＋推移の数値カード）→ 価格と広さ → 定点観測 → 今週の変化 → 要判断事項の順。
+  - 推移は変化が小さいため、グラフではなく中央値・前週比・据え置き週数の数字で出す（利用者の指定 2026-10-17）。
+  - 前週比・前回比・値下げ額のマイナスは「▲」で書く。プラスは「+」、変化なしは「±0」（利用者の指定 2026-10-17）。
     自宅評価と定点観測は数字のカード、今週の変化と要判断事項は1行1項目の箇条書き（利用者の指定 2026-10-17）。
   - 見出しの書体は本文と同じ Zen Kaku Gothic New の太字（入力台帳・日ごとの予算案に揃える。利用者の指定 2026-10-17）。
     データ＝散布図・推移・北/北西換算表・全住戸表。
@@ -58,9 +60,6 @@ h2{font-size:17px;margin:0 0 10px;line-height:1.4}
 .kpi .v small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:2px}
 .kpi .d{font-size:12px;color:var(--muted)}
 .kpi .d b{font-weight:700;color:var(--ink-2)}
-.kpi.trend{position:relative}
-.kpi.trend svg{display:block;width:100%;height:auto;overflow:visible}
-.kpi.trend .tip{min-width:0;white-space:nowrap}
 .changes{margin:0;padding:0;list-style:none;display:grid}
 .changes li{display:grid;grid-template-columns:4.4em 1fr;gap:10px;padding-block:9px;border-top:1px solid var(--line);align-items:start}
 .changes li:first-child{border-top:0;padding-top:2px}
@@ -206,13 +205,14 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const yen = v => { if (v == null) return '—'; const a = Math.abs(v), o = Math.floor(a/10000), m = a % 10000;
   const s = o ? (o + '億' + (m ? m.toLocaleString('ja-JP') + '万' : '')) : a.toLocaleString('ja-JP') + '万'; return (v<0?'−':'') + s; };
+const chgMan = (prev, cur) => prev - cur >= 0 ? '▲' + yen(prev - cur) : '+' + yen(cur - prev);
 const md = s => { if(!s) return ''; const [y,m,d] = s.split('-').map(Number); return m + '/' + d; };
 const longDate = s => { const [y,m,d] = s.split('-').map(Number); return y + '年' + m + '月' + d + '日'; };
 const fl = f => f == null ? '未取得' : f + '階';
 const GROUP = {'南':'south','南東':'south','南西':'south','東':'ew','西':'ew','北':'north','北西':'north','北東':'north'};
 const GNAME = {south:'南・南東', ew:'東・西', north:'北・北西'};
 const GSHAPE = {south:'circle', north:'diamond', ew:'square'};
-const sign = (v, unit, digits) => { if (v == null) return ''; const r = digits!=null ? Number(v).toFixed(digits) : v; return (v>0?'+':v<0?'−':'±') + String(r).replace('-','') + unit; };
+const sign = (v, unit, digits) => { if (v == null) return ''; const r = digits!=null ? Number(v).toFixed(digits) : v; return (v>0?'+':v<0?'▲':'±') + String(r).replace('-','') + unit; };
 
 /* header */
 const M = D.metrics, P = D.prev_metrics || {};
@@ -221,45 +221,26 @@ $('meta').innerHTML = `<span>${longDate(D.date)}更新</span>${D.prev_date ? `<s
 /* 概要：自宅評価と定点観測は数字のカード。値と前週比だけを出す（前回値そのものは出さない） */
 const card = (k, v, u, d, note, wide) => `<div class="kpi${wide ? ' wide' : ''}"><div class="k">${k}</div><div class="v">${v}<small>${u}</small></div><div class="d">${d === '前週値なし' ? d : `前週比 <b>${d}</b>`}</div>${note ? `<div class="d">${esc(note)}</div>` : ''}</div>`;
 const wow = (cur, prev, unit, digits) => { if (prev == null) return '前週値なし'; const d = +(cur - prev).toFixed(digits || 0); return d === 0 ? '±0' + unit : sign(d, unit, digits); };
-const yenDiff = v => v === 0 ? '±0円' : (v > 0 ? '+' : '−') + yen(Math.abs(v)) + '円';
+const yenDiff = v => v === 0 ? '±0円' : (v > 0 ? '+' : '▲') + yen(Math.abs(v)) + '円';
 
 /* 自宅評価 */
 const [hl, hh] = D.home_value_man, ph = D.prev_home_value_man;
 const homeWow = !ph ? '前週値なし' : (hl - ph[0] === hh - ph[1]) ? yenDiff(hl - ph[0]) : `下限 ${yenDiff(hl - ph[0])}・上限 ${yenDiff(hh - ph[1])}`;
 $('home').innerHTML = card('推定市場価値', `${yen(hl)}〜${yen(hh)}円`, '', homeWow, D.home_status, true)
-  + '<div class="kpi wide trend"><div class="k">推定市場価値の推移</div><div id="home-trend"></div><div class="tip" hidden></div></div>';
+  + homeTrendCard();
 
-/* 推定市場価値の週別推移（上限・下限の帯）。カードの幅に合わせて描き直す */
-function drawHomeTrend(){
-  const box = $('home-trend'), card = box.parentElement, tip = card.querySelector('.tip');
+/* 推定市場価値の推移：中央値（下限と上限の真ん中）・前週比・据え置きが何週続いているか */
+function homeTrendCard(){
+  const mid = v => Math.round((v[0] + v[1]) / 2);
   const h = (D.history || []).filter(x => Array.isArray(x.home));
-  if (!h.length) { box.innerHTML = '<div class="d">推移データなし</div>'; return; }
-  const W = Math.max(260, Math.round(box.clientWidth || 300)), H = 96, m = {l:4, r:4, t:20, b:22};
-  const lo0 = Math.min(...h.map(x => x.home[0])), hi0 = Math.max(...h.map(x => x.home[1]));
-  const pad = Math.max((hi0 - lo0) * 0.25, 200), lo = lo0 - pad, hi = hi0 + pad;
-  const X = i => h.length === 1 ? W/2 : m.l + 8 + i/(h.length-1)*(W - m.l - m.r - 16), Y = v => H - m.b - (v - lo)/(hi - lo)*(H - m.t - m.b);
-  const top = h.map((x,i) => `${X(i)} ${Y(x.home[1])}`), bot = h.map((x,i) => `${X(i)} ${Y(x.home[0])}`).reverse();
-  let g = `<line x1="0" x2="${W}" y1="${H-m.b}" y2="${H-m.b}" stroke="var(--line)"/>`;
-  if (h.length > 1) g += `<path d="M${top.join('L')}L${bot.join('L')}Z" fill="var(--accent)" fill-opacity=".14"/>`
-    + `<path d="M${top.join('L')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`
-    + `<path d="M${h.map((x,i) => `${X(i)} ${Y(x.home[0])}`).join('L')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
-  const L = h.length - 1, showAll = h.length <= 8;
-  h.forEach((x,i) => { const last = i === L;
-    [1,0].forEach(k => g += `<circle cx="${X(i)}" cy="${Y(x.home[k])}" r="${last?4.5:3.5}" fill="${last?'var(--accent)':'var(--surface)'}" stroke="var(--accent)" stroke-width="2"/>`);
-    if (showAll || last || i === 0) g += `<text x="${X(i)}" y="${H-6}" text-anchor="${h.length>1&&i===0?'start':h.length>1&&last?'end':'middle'}" fill="var(--muted)" font-size="11">${md(x.date)}</text>`; });
-  g += `<text x="${X(L)-8}" y="${Y(h[L].home[1])-8}" text-anchor="${h.length>1?'end':'middle'}" fill="var(--ink)" font-size="11.5" font-weight="700">${yen(h[L].home[1])}</text>`;
-  g += `<text x="${X(L)-8}" y="${Y(h[L].home[0])-7}" text-anchor="${h.length>1?'end':'middle'}" fill="var(--ink)" font-size="11.5" font-weight="700">${yen(h[L].home[0])}</text>`;
-  const step = h.length > 1 ? (X(1) - X(0)) : W;
-  h.forEach((x,i) => g += `<rect class="hit" data-i="${i}" x="${X(i)-step/2}" y="0" width="${step}" height="${H}" fill="transparent" tabindex="0" aria-label="${md(x.date)} ${yen(x.home[0])}〜${yen(x.home[1])}円"/>`);
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="推定市場価値の週別推移">${g}</svg>`;
-  const show = el => { const x = h[+el.dataset.i]; tip.innerHTML = `<b>${md(x.date)}</b> ${yen(x.home[0])}〜${yen(x.home[1])}円`; tip.hidden = false;
-    const r = el.getBoundingClientRect(), c = card.getBoundingClientRect(); let left = r.left - c.left + r.width/2 - tip.offsetWidth/2;
-    left = Math.max(8, Math.min(left, c.width - tip.offsetWidth - 8)); tip.style.left = left + 'px'; tip.style.top = '6px'; };
-  box.querySelectorAll('.hit').forEach(el => { el.addEventListener('pointerenter', () => show(el)); el.addEventListener('focus', () => show(el)); el.addEventListener('click', () => show(el));
-    el.addEventListener('pointerleave', () => tip.hidden = true); el.addEventListener('blur', () => tip.hidden = true); });
+  const cur = mid(D.home_value_man);
+  const prevV = h.length >= 2 ? h[h.length - 2].home : D.prev_home_value_man;
+  const d = prevV ? yenDiff(cur - mid(prevV)) : '前週値なし';
+  let i = h.length - 1; while (i > 0 && mid(h[i-1].home) === mid(h[i].home)) i--;
+  const n = h.length - i;
+  const note = !h.length ? '' : n >= 2 ? `${n}週続けて据え置き（${md(h[i].date)}〜）` : (h.length >= 2 ? '今週変更' : `記録は${md(h[0].date)}から`);
+  return card('推定市場価値の推移（中央値）', `${yen(cur)}円`, '', d, note, true);
 }
-drawHomeTrend();
-let rszH; addEventListener('resize', () => { clearTimeout(rszH); rszH = setTimeout(drawHomeTrend, 150); });
 
 /* 定点観測 */
 $('kpis').innerHTML = [
@@ -286,7 +267,7 @@ $('decisions').innerHTML = D.decisions.length ? D.decisions.map(x => `<li><span 
 
 /* 北・北西の換算表（データ側） */
 $('home-spec').textContent = `自宅：40階・北東角 ／ 壁芯${D.home_sqm}㎡（${D.home_tsubo}坪）`;
-$('north').innerHTML = D.north.length ? D.north.map((n,i) => `<tr><td>${esc(n.dir)}${esc(n.plan)} ${n.sqm}㎡</td><td class="r">${fl(n.floor)}</td><td class="r">${n.tsubo_man.toFixed(1)}万</td><td class="r">${yen(n.conv_man)}</td><td class="r">${n.is_new ? '新規' : n.change_man === 0 ? '±0万' : sign(n.change_man,'万')}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">該当なし</td></tr>';
+$('north').innerHTML = D.north.length ? D.north.map((n,i) => `<tr><td>${esc(n.dir)}${esc(n.plan)} ${n.sqm}㎡</td><td class="r">${fl(n.floor)}</td><td class="r">${n.tsubo_man.toFixed(1)}万</td><td class="r">${yen(n.conv_man)}</td><td class="r">${n.is_new ? '新規' : n.change_man === 0 ? '±0万' : (n.change_man > 0 ? '+' : '▲') + yen(Math.abs(n.change_man))}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">該当なし</td></tr>';
 $('north-fn').innerHTML = '<li>換算額＝その住戸の坪単価×19.42坪。階数・角部屋かどうか・間取りが自宅と異なるため、推定市場価値の参考値として扱う。</li>';
 
 /* scatter */
@@ -330,7 +311,7 @@ function drawScatter(){
     const cx = X(u.sqm), cy = Y(u.price_man);
     if (u.status==='新規') g += `<circle cx="${cx}" cy="${cy}" r="10.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
     g += shape(u, cx, cy);
-    if (u.status!=='継続') lbls.push({cx, cy, t: u.status==='改定' ? '▲' + yen(u.prev_price_man - u.price_man) : '新規',
+    if (u.status!=='継続') lbls.push({cx, cy, t: u.status==='改定' ? chgMan(u.prev_price_man, u.price_man) : '新規',
       pri: u.status==='改定' ? Math.abs(u.prev_price_man - u.price_man) : 1e9});
     g += `<circle cx="${cx}" cy="${cy}" r="13" fill="transparent" data-i="${i}" class="hit" tabindex="0" aria-label="${esc(yen(u.price_man))}円 ${u.sqm}㎡ ${esc(u.dir)}"/>`;
   });
@@ -387,7 +368,7 @@ function renderUnits(){
   let rows = D.units.filter(u => filt==='all' || (GROUP[u.dir]||'south')===filt);
   rows = rows.slice().sort((a,b) => { let va=a[sortK], vb=b[sortK]; if (va==null) return 1; if (vb==null) return -1;
     const c = typeof va==='number' ? va-vb : String(va).localeCompare(String(vb),'ja'); return sortAsc ? c : -c; });
-  document.querySelector('#units tbody').innerHTML = rows.map((u,i) => `<tr><td class="r" style="color:var(--muted)">${i+1}</td><td class="r"><b>${yen(u.price_man)}</b></td><td>${esc(u.dir)}</td><td class="r">${fl(u.floor)}</td><td class="r">${u.sqm.toFixed(2)}㎡</td><td>${esc(u.plan)}</td><td class="r">${u.tsubo_man.toFixed(1)}万</td><td><span class="chip t-${u.status}">${u.status}${u.status==='改定'?' ▲'+yen(u.prev_price_man-u.price_man):''}</span>${noteNo.has(u)?` <sup>※${noteNo.get(u)}</sup>`:''}</td></tr>`).join('') || `<tr><td colspan="8" class="empty">該当なし</td></tr>`;
+  document.querySelector('#units tbody').innerHTML = rows.map((u,i) => `<tr><td class="r" style="color:var(--muted)">${i+1}</td><td class="r"><b>${yen(u.price_man)}</b></td><td>${esc(u.dir)}</td><td class="r">${fl(u.floor)}</td><td class="r">${u.sqm.toFixed(2)}㎡</td><td>${esc(u.plan)}</td><td class="r">${u.tsubo_man.toFixed(1)}万</td><td><span class="chip t-${u.status}">${u.status}${u.status==='改定'?' '+chgMan(u.prev_price_man, u.price_man):''}</span>${noteNo.has(u)?` <sup>※${noteNo.get(u)}</sup>`:''}</td></tr>`).join('') || `<tr><td colspan="8" class="empty">該当なし</td></tr>`;
   document.querySelectorAll('.sortbtn').forEach(b => b.onclick = () => { const k = b.dataset.k; if (sortK===k) sortAsc = !sortAsc; else { sortK = k; sortAsc = true; } renderUnits(); });
 }
 $('seg').innerHTML = [['all','すべて'],['south','南・南東'],['ew','東・西'],['north','北・北西']].map(([k,t]) => `<button type="button" data-f="${k}" aria-pressed="${k==='all'}">${t}</button>`).join('');
