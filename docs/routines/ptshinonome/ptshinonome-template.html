@@ -1,9 +1,10 @@
 <title>パークタワー東雲 売出し週報</title>
 <!--
   設計メモ（週次タスクはこのファイルを変更しない。データは末尾の page-data の script 要素に差し込む）
-  - 構成は「概要 → データ」。概要＝自宅評価（＋推移の数値カード）→ 定点観測（数値）→ 定点観測の推移（グラフ）→ 価格と広さ（グラフ）
+  - 構成は「概要 → データ」。概要＝今週のまとめ（文章3行）→ 自宅評価（＋推移の数値カード）→ 定点観測（数値）→ 定点観測の推移（グラフ）→ 価格と広さ（グラフ）
     → 今週の変化 → 要判断事項の順。数値とグラフを上にまとめ、文章の一覧はその後に置く（利用者の指定 2026-10-17）。
   - 推移は変化が小さいため、グラフではなく中央値・前週比・据え置き週数の数字で出す（利用者の指定 2026-10-17）。
+  - 今週のまとめはタスク側が書く日本語の3行（headline）。数値を並べない（利用者の指定 2026-10-17）。
   - 前週比・前回比・値下げ額のマイナスは「▲」で書く。プラスは「+」、変化なしは「±0」（利用者の指定 2026-10-17）。
     自宅評価と定点観測は数字のカード、今週の変化と要判断事項は1行1項目の箇条書き（利用者の指定 2026-10-17）。
   - 見出しの書体は本文と同じ Zen Kaku Gothic New の太字（入力台帳・日ごとの予算案に揃える。利用者の指定 2026-10-17）。
@@ -51,6 +52,9 @@ h2{font-size:17px;margin:0 0 10px;line-height:1.4}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
 .sub{font-size:12.5px;color:var(--muted);margin:0}
 .kgroup h2{margin-bottom:8px}
+.lead{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:15.5px;line-height:1.75}
+.lead li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.lead li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:.75em}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (min-width:720px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px;min-width:0}
@@ -126,6 +130,10 @@ tbody tr:last-child td{border-bottom:0}
 
   <section class="part" aria-labelledby="p1">
     <h2 class="part-h" id="p1">概要</h2>
+    <div class="panel" id="lead-panel">
+      <h2>今週のまとめ</h2>
+      <ul class="lead" id="lead"></ul>
+    </div>
     <div class="kgroup">
       <h2>自宅評価</h2>
       <div class="kpis num" id="home"></div>
@@ -218,6 +226,10 @@ const sign = (v, unit, digits) => { if (v == null) return ''; const r = digits!=
 /* header */
 const M = D.metrics, P = D.prev_metrics || {};
 $('meta').innerHTML = `<span>${longDate(D.date)}更新</span>${D.prev_date ? `<span>前回 ${md(D.prev_date)}</span>` : ''}<span>SUUMO ${M.suumo_count}件 → 名寄せ後 ${M.units_count}戸</span>`;
+
+/* 今週のまとめ（タスクが書く3行。無い週は欄ごと出さない） */
+const lead = (D.headline || []).slice(0, 3);
+if (lead.length) $('lead').innerHTML = lead.map(s => `<li><span>${esc(s)}</span></li>`).join(''); else $('lead-panel').hidden = true;
 
 /* 概要：自宅評価と定点観測は数字のカード。値と前週比だけを出す（前回値そのものは出さない） */
 const card = (k, v, u, d, note, wide) => `<div class="kpi${wide ? ' wide' : ''}"><div class="k">${k}</div><div class="v">${v}<small>${u}</small></div><div class="d">${d === '前週値なし' ? d : `前週比 <b>${d}</b>`}</div>${note ? `<div class="d">${esc(note)}</div>` : ''}</div>`;

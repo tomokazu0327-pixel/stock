@@ -23,6 +23,7 @@ input.json の形（1週分。判断を要する文章はタスク側が書き�
  "ignore_ended_nc": ["21603564"],      # 同一住戸の別nc入れ替えなど、掲載終了に数えない nc
  "home_value_man": [11550, 12300],
  "home_status": "据え置き（所有者判断待ち）",
+ "headline": ["今週のまとめ。日本語の文で2〜3行、各45字以内。数値を並べない"],
  "summary": ["自動で出ない補足だけ。0〜2件、各40字以内"],
                                        # 新規・価格改定・掲載終了の箇条書きはこのスクリプトが units と
                                        # 前回データから自動で作る（page の changes）。ここに価格を並べない。
@@ -158,6 +159,7 @@ def main(inp_path, tpl_path, out_path, next_path):
         "home_value_man": d["home_value_man"], "home_status": d.get("home_status", ""),
         "prev_home_value_man": prev.get("home_value_man"),
         "changes": changes,
+        "headline": d.get("headline", [])[:3],
         "summary": d.get("summary", [])[:3], "decisions": d.get("decisions", []),
         "units": units, "ended": ended, "off_suumo": d.get("off_suumo", []),
         "north": north, "history": history,
