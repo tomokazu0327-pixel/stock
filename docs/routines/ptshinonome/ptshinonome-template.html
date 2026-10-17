@@ -1,8 +1,8 @@
 <title>パークタワー東雲 売出し週報</title>
 <!--
   設計メモ（週次タスクはこのファイルを変更しない。データは末尾の page-data の script 要素に差し込む）
-  - 構成は「概要 → データ」。概要＝自宅評価（＋推移の数値カード）→ 定点観測 → 今週の変化 → 要判断事項 → 価格と広さの順。
-    数字のカードをスマホの最初の画面に収め、件数（定点観測）→ 中身（今週の変化）と読めるようにする（利用者の指定 2026-10-17）。
+  - 構成は「概要 → データ」。概要＝自宅評価（＋推移の数値カード）→ 定点観測（数値）→ 定点観測の推移（グラフ）→ 価格と広さ（グラフ）
+    → 今週の変化 → 要判断事項の順。数値とグラフを上にまとめ、文章の一覧はその後に置く（利用者の指定 2026-10-17）。
   - 推移は変化が小さいため、グラフではなく中央値・前週比・据え置き週数の数字で出す（利用者の指定 2026-10-17）。
   - 前週比・前回比・値下げ額のマイナスは「▲」で書く。プラスは「+」、変化なしは「±0」（利用者の指定 2026-10-17）。
     自宅評価と定点観測は数字のカード、今週の変化と要判断事項は1行1項目の箇条書き（利用者の指定 2026-10-17）。
@@ -134,6 +134,16 @@ tbody tr:last-child td{border-bottom:0}
       <h2>定点観測</h2>
       <div class="kpis num" id="kpis"></div>
     </div>
+    <div>
+      <h2>定点観測の推移</h2>
+      <div class="minis" id="minis"></div>
+    </div>
+    <div class="panel">
+      <h2>価格と広さ</h2>
+      <p class="sub">点は今週SUUMOに掲載中の住戸。破線は今週の坪単価中央値で換算した価格。縦の帯は自宅の推定市場価値。</p>
+      <div class="legend" id="sc-legend"></div>
+      <div class="chart" id="scatter"></div>
+    </div>
     <div class="panel">
       <h2>今週の変化</h2>
       <ul class="changes num" id="summary"></ul>
@@ -142,20 +152,10 @@ tbody tr:last-child td{border-bottom:0}
       <h2>要判断事項</h2>
       <ul class="decisions" id="decisions"></ul>
     </div>
-    <div class="panel">
-      <h2>価格と広さ</h2>
-      <p class="sub">点は今週SUUMOに掲載中の住戸。破線は今週の坪単価中央値で換算した価格。縦の帯は自宅の推定市場価値。</p>
-      <div class="legend" id="sc-legend"></div>
-      <div class="chart" id="scatter"></div>
-    </div>
   </section>
 
   <section class="part" aria-labelledby="p2">
     <h2 class="part-h" id="p2">データ</h2>
-    <div>
-      <h2>定点観測の推移</h2>
-      <div class="minis" id="minis"></div>
-    </div>
     <div class="panel">
       <h2>北・北西向き住戸の換算（自宅評価の参考）</h2>
       <p class="sub" id="home-spec"></p>
